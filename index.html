@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORBIT - 3D Solar System Interactive Simulation</title>
+  <meta name="description" content="Explore an interactive, scientifically calibrated 3D Solar System animation with accurate Keplerian orbits, photorealistic planets, and live astronomical telemetry.">
+
+  <!-- Google Fonts: Orbitron, Space Grotesk, Outfit, Space Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Main Stylesheet (Cache-Busted) -->
+  <link rel="stylesheet" href="css/style.css?v=3.5">
+
+  <!-- Three.js r128 & OrbitControls CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <!-- WebGL 3D Canvas Container -->
+  <div id="webgl-container"></div>
+
+  <!-- Loading Screen Overlay -->
+  <div id="loading-overlay">
+    <div class="loader-solar-system">
+      <div class="loader-sun"></div>
+      <div class="loader-orbit loader-orbit-1"></div>
+      <div class="loader-orbit loader-orbit-2"></div>
+    </div>
+    <div class="loading-title">ORBIT SYSTEM</div>
+    <div class="loading-progress-container">
+      <div id="loading-progress-bar"></div>
+    </div>
+    <div id="loading-status">Synthesizing Celestial Textures...</div>
+  </div>
+
+  <!-- HUD Header & Global Navigation -->
+  <header class="hud-header">
+    <!-- Brand & Simulated Date -->
+    <div class="brand-section">
+      <span class="brand-logo">🪐</span>
+      <div class="brand-name-stacked">
+        <span class="brand-text-1">ORBIT</span>
+        <span class="brand-text-2">3D</span>
+      </div>
+      <span id="realtime-status-dot" class="realtime-dot active" title="Running in Real Time"></span>
+      <span id="sim-date" class="sim-date-badge">Loading...</span>
+    </div>
+
+    <!-- Center Simulation Time Controls -->
+    <div class="time-controls-panel">
+      <button id="live-sync-btn" class="hud-btn-pill active" title="Synchronize to Live Real Time">
+        <span class="pulse-dot"></span> LIVE
+      </button>
+      <button id="reverse-btn" class="hud-btn-circle" title="Reverse Time Direction">⏮</button>
+      <button id="play-pause-btn" class="hud-btn-circle play-btn-gold active" title="Pause / Resume Orbit Simulation">
+        <span id="play-pause-icon">▶</span>
+      </button>
+
+      <div class="speed-slider-wrap">
+        <span class="section-label">SPEED</span>
+        <input id="speed-slider" class="speed-slider" type="range" min="0" max="100" step="0.5" value="0">
+        <span id="speed-val" class="speed-label">1x Real</span>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <div class="speed-presets-group">
+        <button class="speed-preset active" data-speed="1" title="Real Time (1s = 1s)">1x<br><span class="preset-sub">(Real)</span></button>
+        <button class="speed-preset" data-speed="60" title="1 Minute per second">1m/s</button>
+        <button class="speed-preset" data-speed="3600" title="1 Hour per second">1h/s</button>
+        <button class="speed-preset" data-speed="86400" title="1 Day per second">1d/s</button>
+        <button class="speed-preset" data-speed="2592000" title="1 Month per second">1mo/s</button>
+        <button class="speed-preset" data-speed="31536000" title="1 Year per second">1yr/s</button>
+      </div>
+    </div>
+
+    <!-- Right Header Actions -->
+    <div class="header-actions">
+      <button class="view-preset active" data-view="overview" title="Full System Overview">Overview</button>
+      <button class="view-preset" data-view="topdown" title="Top-Down Ecliptic Plane">Top-Down</button>
+      <button class="view-preset" data-view="angled" title="45° Inclined Angle">Angled</button>
+      <button class="view-preset" data-view="inner" title="Inner Terrestrial Planets">Inner</button>
+      <button id="tour-btn" class="hud-action-btn tour-btn" title="Automated Guided Tour">
+        <span class="tour-icon">🎬</span> <span class="tour-text">Cinematic<br>Tour</span>
+      </button>
+      <button id="audio-btn" class="hud-action-btn" title="Toggle Deep Space Ambient Soundscape">
+        <span id="audio-icon">🔇</span>
+      </button>
+      <button id="shortcuts-btn" class="hud-action-btn" title="Keyboard Shortcuts">⌨</button>
+      <button id="settings-toggle-btn" class="hud-action-btn" title="Display Options">⚙</button>
+      <button id="fullscreen-btn" class="hud-action-btn" title="Toggle Fullscreen">⛶</button>
+    </div>
+  </header>
+
+  <!-- Left Side: Collapsible Planet Telemetry Dossier -->
+  <aside id="telemetry-dossier" class="telemetry-dossier">
+    <div class="dossier-header">
+      <div class="dossier-title-wrap">
+        <h2 id="dossier-title" class="dossier-title">The Sun</h2>
+        <span id="dossier-type" class="dossier-type">Yellow Dwarf Star</span>
+      </div>
+      <button id="dossier-close-btn" class="dossier-close-btn" title="Close Dossier">✕</button>
+    </div>
+
+    <div class="dossier-body">
+      <p id="dossier-desc" class="dossier-desc"></p>
+
+      <!-- Key Telemetry Metrics -->
+      <div class="telemetry-grid">
+        <div class="stat-card full-width">
+          <span class="stat-card-label">Distance from Sun</span>
+          <span id="stat-distance" class="stat-card-value highlight">-</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-card-label">Orbital Velocity</span>
+          <span id="stat-speed" class="stat-card-value highlight">-</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-card-label">Equatorial Diameter</span>
+          <span id="stat-diameter" class="stat-card-value">-</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-card-label">Mass</span>
+          <span id="stat-mass" class="stat-card-value">-</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-card-label">Surface Gravity</span>
+          <span id="stat-gravity" class="stat-card-value">-</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-card-label">Surface Temp</span>
+          <span id="stat-temp" class="stat-card-value">-</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-card-label">Rotation (Day)</span>
+          <span id="stat-day" class="stat-card-value">-</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-card-label">Orbit (Year)</span>
+          <span id="stat-year" class="stat-card-value">-</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-card-label">Moons</span>
+          <span id="stat-moons" class="stat-card-value">-</span>
+        </div>
+      </div>
+
+      <!-- Atmosphere -->
+      <div class="atmosphere-section">
+        <span class="section-label">Atmospheric Composition</span>
+        <div id="dossier-atmosphere" class="atmos-tags-wrap"></div>
+      </div>
+
+      <!-- Fun Fact -->
+      <div class="fun-fact-box">
+        <span class="fact-icon">💡</span>
+        <span id="dossier-fact" class="fact-text"></span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="dossier-actions">
+        <button id="focus-target-btn" class="primary-hud-btn">
+          <span>🎯</span> Lock & Follow Target
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Bottom: Planet Selector Ribbon -->
+  <nav class="planet-ribbon-container">
+    <button class="planet-pill active" data-planet="sun">
+      <span class="pill-dot" style="background: #ffaa00; color: #ffaa00;"></span>
+      <span class="pill-label">Sun</span>
+    </button>
+    <button class="planet-pill" data-planet="mercury">
+      <span class="pill-dot" style="background: #a39f99; color: #a39f99;"></span>
+      <span class="pill-label">Mercury</span>
+    </button>
+    <button class="planet-pill" data-planet="venus">
+      <span class="pill-dot" style="background: #e3bb76; color: #e3bb76;"></span>
+      <span class="pill-label">Venus</span>
+    </button>
+    <button class="planet-pill" data-planet="earth">
+      <span class="pill-dot" style="background: #2b82c9; color: #2b82c9;"></span>
+      <span class="pill-label">Earth</span>
+    </button>
+    <button class="planet-pill" data-planet="mars">
+      <span class="pill-dot" style="background: #d14f2e; color: #d14f2e;"></span>
+      <span class="pill-label">Mars</span>
+    </button>
+    <button class="planet-pill" data-planet="jupiter">
+      <span class="pill-dot" style="background: #c88b3a; color: #c88b3a;"></span>
+      <span class="pill-label">Jupiter</span>
+    </button>
+    <button class="planet-pill" data-planet="saturn">
+      <span class="pill-dot" style="background: #e4c988; color: #e4c988;"></span>
+      <span class="pill-label">Saturn</span>
+    </button>
+    <button class="planet-pill" data-planet="uranus">
+      <span class="pill-dot" style="background: #71c5cf; color: #71c5cf;"></span>
+      <span class="pill-label">Uranus</span>
+    </button>
+    <button class="planet-pill" data-planet="neptune">
+      <span class="pill-dot" style="background: #3466d6; color: #3466d6;"></span>
+      <span class="pill-label">Neptune</span>
+    </button>
+    <button class="planet-pill" data-planet="pluto">
+      <span class="pill-dot" style="background: #c29f82; color: #c29f82;"></span>
+      <span class="pill-label">Pluto</span>
+    </button>
+  </nav>
+
+  <!-- Right Side: Settings Drawer -->
+  <aside id="settings-drawer" class="settings-drawer">
+    <div class="settings-header">
+      <span class="settings-title">VISUAL SETTINGS</span>
+      <button id="settings-close-btn" class="dossier-close-btn">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-item">
+        <div class="setting-label-wrap">
+          <span class="setting-label">Orbital Trails</span>
+          <span class="setting-subtext">Glowing planetary paths</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-orbits" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label-wrap">
+          <span class="setting-label">Planet Labels</span>
+          <span class="setting-subtext">3D billboard name tags</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-labels" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label-wrap">
+          <span class="setting-label">Asteroid Belt</span>
+          <span class="setting-subtext">1,400+ tumbling rocks</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-asteroids" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label-wrap">
+          <span class="setting-label">Ecliptic Grid</span>
+          <span class="setting-subtext">Astronomical coordinate rings</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-grid">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcuts-modal" class="shortcuts-modal">
+    <div class="shortcuts-content">
+      <div class="shortcuts-header">
+        <span class="shortcuts-title">KEYBOARD SHORTCUTS</span>
+        <button id="shortcuts-close-btn" class="dossier-close-btn">✕</button>
+      </div>
+      <div class="shortcuts-list">
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Play / Pause Simulation</span>
+          <span class="kbd-badge">SPACE</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Reset View to System Overview</span>
+          <span class="kbd-badge">R</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Toggle Cinematic Guided Tour</span>
+          <span class="kbd-badge">T</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Close Panels / Unfocus</span>
+          <span class="kbd-badge">ESC</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Focus Sun</span>
+          <span class="kbd-badge">0</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Focus Planets 1 to 9 (Mercury - Pluto)</span>
+          <span class="kbd-badge">1 - 9</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Orbit, Pan & Zoom</span>
+          <span class="kbd-badge">MOUSE L / R / SCROLL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main ES Module Script -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
