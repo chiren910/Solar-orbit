@@ -40,13 +40,52 @@ export class CameraController {
     this.targetObject = celestialObj;
     this.isFollowing = true;
 
-    // Calculate ideal camera distance based on the object's visual radius
-    const radius = celestialObj.visualRadius || 5;
-    const defaultDist = Math.max(12, radius * 3.6);
-    
-    // Position offset with an aesthetic elevation angle
-    const offset = customOffset || new THREE.Vector3(0, radius * 1.2, defaultDist);
+    // Determine the true visual bounds (including rings for Saturn/Uranus and corona for Sun)
+    const baseRadius = celestialObj.visualRadius || 5;
+    let boundingRadius = baseRadius;
+
+    if (celestialObj.data) {
+      if (celestialObj.data.hasRings && celestialObj.data.ringOuterRadius) {
+        // Rings extend wider than the sphere (Saturn ringOuterRadius=16.5, Uranus=8.8)
+        boundingRadius = Math.max(boundingRadius, celestialObj.data.ringOuterRadius * 1.04);
+      } else if (bodyId === 'sun') {
+        // Sun corona
+        boundingRadius = baseRadius * 1.15;
+      }
+    }
+
+    // Dynamic framing based on camera viewport aspect ratio
+    // On portrait mobile (aspect < 1), horizontal FOV is narrow: 2 * atan(tan(fov/2) * aspect)
+    // We calibrate distance so the planet fills ~80% of screen width, never cutting on the sides!
+    const aspect = (this.camera && this.camera.aspect) ? this.camera.aspect : (window.innerWidth / window.innerHeight);
+    const fov = (this.camera && this.camera.fov) ? this.camera.fov : 45;
+    const fovRad = (fov * Math.PI) / 180;
+    const tanHalfFov = Math.tan(fovRad / 2);
+
+    const isMobilePortrait = aspect < 1.0;
+    // Fill ratio: 80% on mobile portrait (10% padding on each side), 72% on landscape
+    const fillRatio = isMobilePortrait ? 0.80 : 0.72;
+
+    const distForHeight = boundingRadius / (fillRatio * tanHalfFov);
+    const distForWidth = boundingRadius / (fillRatio * tanHalfFov * aspect);
+
+    // Guaranteed framing distance to prevent clipping on ANY screen edge
+    const requiredDist = Math.max(distForHeight, distForWidth);
+
+    // Elevation angle: slight angle to view equatorial details and 3D spherical depth
+    const elevAngleRad = (isMobilePortrait ? 10 : 15) * (Math.PI / 180);
+    const elevY = requiredDist * Math.sin(elevAngleRad);
+    const distZ = requiredDist * Math.cos(elevAngleRad);
+
+    const offset = customOffset || new THREE.Vector3(0, elevY, distZ);
     this.targetOffset.copy(offset);
+
+    // Allow user to manually zoom in extra close ("user can manual zoom use and get extra zoom fill")
+    // Set minDistance close to the planet surface so pinch-to-zoom gives an ultra-close inspection view!
+    if (this.controls) {
+      this.controls.minDistance = Math.max(0.6, baseRadius * 1.14);
+      this.controls.maxDistance = Math.max(900, requiredDist * 4);
+    }
 
     // Starting points
     this.startCamPos.copy(this.camera.position);
@@ -77,6 +116,10 @@ export class CameraController {
 
     this.endCamPos.set(0, 240, 360);
     this.endTargetPos.set(0, 0, 0);
+    if (this.controls) {
+      this.controls.minDistance = 4;
+      this.controls.maxDistance = 1800;
+    }
 
     this.transitionStartTime = performance.now();
     this.transitionDuration = duration;
