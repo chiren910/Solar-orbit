@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <!-- Main Stylesheet (Cache-Busted v4.0 for Mobile) -->
-  <link rel="stylesheet" href="css/style.css?v=4.3">
+  <link rel="stylesheet" href="css/style.css?v=4.5">
 
   <!-- Three.js r128 & OrbitControls CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -355,6 +355,20 @@
         </div>
       </div>
     </div>
+  </div>
+
+
+  <!-- Right Side: Vertical Orbital Speed Rail -->
+  <div id="vertical-speed-rail" class="vertical-speed-rail">
+    <span class="vsr-label-top">FAST</span>
+    <div class="vsr-track-wrap">
+      <div class="vsr-glow-track">
+        <div id="vsr-fill" class="vsr-fill"></div>
+      </div>
+      <input id="vsr-slider" class="vsr-slider" type="range" min="0" max="100" step="0.5" value="0" orient="vertical">
+    </div>
+    <span class="vsr-label-bottom">SLOW</span>
+    <span id="vsr-speed-badge" class="vsr-speed-badge">1x Real</span>
   </div>
 
   <!-- Main ES Module Script -->

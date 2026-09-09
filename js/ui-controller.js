@@ -64,6 +64,10 @@ export class UIController {
       shortcutsBtn: document.getElementById('shortcuts-btn'),
       shortcutsCloseBtn: document.getElementById('shortcuts-close-btn'),
       hudHeader: document.getElementById('hud-header'),
+      vsrSlider: document.getElementById('vsr-slider'),
+      vsrFill: document.getElementById('vsr-fill'),
+      vsrSpeedBadge: document.getElementById('vsr-speed-badge'),
+      vsrRail: document.getElementById('vertical-speed-rail'),
       hudToggleBtn: document.getElementById('hud-toggle-btn'),
       hudToggleIcon: document.getElementById('hud-toggle-icon')
     };
@@ -119,6 +123,7 @@ export class UIController {
         this.solarSystem.timeMultiplier = -this.solarSystem.timeMultiplier;
         const isReversed = this.solarSystem.timeMultiplier < 0;
         this.dom.reverseBtn.classList.toggle('active', isReversed);
+        this.syncVerticalRail();
         if (this.dom.liveSyncBtn && isReversed) {
           this.dom.liveSyncBtn.classList.remove('active');
         }
@@ -138,6 +143,7 @@ export class UIController {
           if (defPreset) defPreset.classList.add('active');
         }
         this.dom.liveSyncBtn.classList.add('active');
+        this.syncVerticalRail();
       });
     }
 
@@ -149,6 +155,7 @@ export class UIController {
         this.solarSystem.timeMultiplier = speed * sign;
         this.dom.speedVal.textContent = this.formatSpeedLabel(speed);
         this.clearActiveSpeedPreset();
+        this.syncVerticalRail();
 
         if (this.dom.liveSyncBtn) {
           this.dom.liveSyncBtn.classList.toggle('active', sliderVal === 0 && sign > 0);
@@ -166,6 +173,7 @@ export class UIController {
           if (this.dom.speedVal) this.dom.speedVal.textContent = this.formatSpeedLabel(speed);
           this.dom.speedPresets.forEach(p => p.classList.remove('active'));
           preset.classList.add('active');
+          this.syncVerticalRail();
 
           if (this.dom.liveSyncBtn) {
             this.dom.liveSyncBtn.classList.toggle('active', speed === 1.0 && sign > 0);
@@ -383,6 +391,49 @@ export class UIController {
       }, { passive: true });
     }
 
+    // 10e. Vertical Speed Rail (Volume-Style)
+    if (this.dom.vsrSlider) {
+      // Create visible thumb overlay
+      const trackWrap = document.querySelector('.vsr-track-wrap');
+      if (trackWrap) {
+        this.vsrThumb = document.createElement('div');
+        this.vsrThumb.className = 'vsr-thumb';
+        this.vsrThumb.style.bottom = '0%';
+        trackWrap.appendChild(this.vsrThumb);
+      }
+
+      this.dom.vsrSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        const speed = this.sliderToSpeed(val);
+        const sign = this.solarSystem.timeMultiplier < 0 ? -1 : 1;
+        this.solarSystem.timeMultiplier = speed * sign;
+
+        // Sync the horizontal speed slider and presets
+        if (this.dom.speedSlider) this.dom.speedSlider.value = val;
+        if (this.dom.speedVal) this.dom.speedVal.textContent = this.formatSpeedLabel(speed);
+        this.clearActiveSpeedPreset();
+
+        // Update vertical rail visuals
+        this.updateVerticalSpeedRail(val, speed);
+
+        // Update LIVE button state
+        if (this.dom.liveSyncBtn) {
+          this.dom.liveSyncBtn.classList.toggle('active', val === 0 && sign > 0);
+        }
+      });
+
+      // Dragging feedback
+      this.dom.vsrSlider.addEventListener('pointerdown', () => {
+        if (this.vsrThumb) this.vsrThumb.classList.add('dragging');
+      });
+      window.addEventListener('pointerup', () => {
+        if (this.vsrThumb) this.vsrThumb.classList.remove('dragging');
+      });
+
+      // Initialize position
+      this.updateVerticalSpeedRail(0, 1.0);
+    }
+
     // 11. Global Keyboard Listeners
     window.addEventListener('keydown', (e) => this.handleKeyboard(e));
   }
@@ -574,6 +625,34 @@ export class UIController {
         this.selectCelestialBody('pluto');
         break;
     }
+  }
+
+  /**
+   * Update vertical speed rail fill, thumb, and badge
+   */
+  updateVerticalSpeedRail(sliderVal, speed) {
+    const percent = Math.max(0, Math.min(100, sliderVal));
+    if (this.dom.vsrFill) {
+      this.dom.vsrFill.style.height = percent + '%';
+    }
+    if (this.vsrThumb) {
+      this.vsrThumb.style.bottom = percent + '%';
+    }
+    if (this.dom.vsrSpeedBadge) {
+      this.dom.vsrSpeedBadge.textContent = this.formatSpeedLabel(speed);
+    }
+  }
+
+  /**
+   * Sync vertical rail when horizontal slider or speed presets change
+   */
+  syncVerticalRail() {
+    const speed = Math.abs(this.solarSystem.timeMultiplier);
+    const sliderVal = this.speedToSlider(speed);
+    if (this.dom.vsrSlider) {
+      this.dom.vsrSlider.value = sliderVal;
+    }
+    this.updateVerticalSpeedRail(sliderVal, speed);
   }
 
   /**
