@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <!-- Main Stylesheet (Cache-Busted v4.0 for Mobile) -->
-  <link rel="stylesheet" href="css/style.css?v=4.5">
+  <link rel="stylesheet" href="css/style.css?v=4.6">
 
   <!-- Three.js r128 & OrbitControls CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -369,6 +369,22 @@
     </div>
     <span class="vsr-label-bottom">SLOW</span>
     <span id="vsr-speed-badge" class="vsr-speed-badge">1x Real</span>
+
+    <!-- Time Travel Jump Buttons -->
+    <div class="vsr-divider"></div>
+    <div id="time-jump-panel" class="time-jump-panel">
+      <span class="tj-title">⏩ TIME JUMP</span>
+      <div class="tj-buttons">
+        <button class="tj-btn" data-jump="1m" title="Jump 1 Month">1 Mo</button>
+        <button class="tj-btn" data-jump="1y" title="Jump 1 Year">1 Yr</button>
+        <button class="tj-btn" data-jump="5y" title="Jump 5 Years">5 Yr</button>
+        <button class="tj-btn" data-jump="10y" title="Jump 10 Years">10 Yr</button>
+        <button class="tj-btn" data-jump="100y" title="Jump 100 Years">100 Yr</button>
+      </div>
+      <button id="tj-direction-toggle" class="tj-direction-btn" title="Toggle Forward / Backward">
+        <span id="tj-direction-icon">▶</span> FWD
+      </button>
+    </div>
   </div>
 
   <!-- Main ES Module Script -->

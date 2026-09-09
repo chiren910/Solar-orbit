@@ -13,6 +13,7 @@ export class UIController {
 
     this.selectedBodyId = 'sun';
     this.isDossierOpen = false;
+    this.timeJumpForward = true;
     this.justClosedDossierTime = 0;
 
     // Cache DOM Elements
@@ -68,6 +69,9 @@ export class UIController {
       vsrFill: document.getElementById('vsr-fill'),
       vsrSpeedBadge: document.getElementById('vsr-speed-badge'),
       vsrRail: document.getElementById('vertical-speed-rail'),
+      timeJumpPanel: document.getElementById('time-jump-panel'),
+      tjDirectionToggle: document.getElementById('tj-direction-toggle'),
+      tjDirectionIcon: document.getElementById('tj-direction-icon'),
       hudToggleBtn: document.getElementById('hud-toggle-btn'),
       hudToggleIcon: document.getElementById('hud-toggle-icon')
     };
@@ -391,7 +395,30 @@ export class UIController {
       }, { passive: true });
     }
 
-    // 10e. Vertical Speed Rail (Volume-Style)
+    // 10e. Time Travel Jump Buttons
+    const tjButtons = document.querySelectorAll('.tj-btn');
+    tjButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const jumpKey = btn.dataset.jump;
+        this.performTimeJump(jumpKey);
+        btn.classList.remove('tj-flash');
+        void btn.offsetWidth;
+        btn.classList.add('tj-flash');
+        btn.addEventListener('animationend', () => btn.classList.remove('tj-flash'), { once: true });
+      });
+    });
+
+    if (this.dom.tjDirectionToggle) {
+      this.dom.tjDirectionToggle.addEventListener('click', () => {
+        this.timeJumpForward = !this.timeJumpForward;
+        this.dom.tjDirectionToggle.innerHTML = this.timeJumpForward
+          ? '<span id="tj-direction-icon">&#9654;</span> FWD'
+          : '<span id="tj-direction-icon">&#9664;</span> BWD';
+        this.dom.tjDirectionToggle.classList.toggle('backward', !this.timeJumpForward);
+      });
+    }
+
+    // 10f. Vertical Speed Rail (Volume-Style)
     if (this.dom.vsrSlider) {
       // Create visible thumb overlay
       const trackWrap = document.querySelector('.vsr-track-wrap');
@@ -624,6 +651,41 @@ export class UIController {
       case 'Digit9':
         this.selectCelestialBody('pluto');
         break;
+    }
+  }
+
+  /**
+   * Perform an instant time jump on the simulation date
+   */
+  performTimeJump(jumpKey) {
+    const direction = this.timeJumpForward ? 1 : -1;
+    const currentDate = this.solarSystem.currentSimDate;
+    const newDate = new Date(currentDate.getTime());
+
+    switch (jumpKey) {
+      case '1m':
+        newDate.setMonth(newDate.getMonth() + (1 * direction));
+        break;
+      case '1y':
+        newDate.setFullYear(newDate.getFullYear() + (1 * direction));
+        break;
+      case '5y':
+        newDate.setFullYear(newDate.getFullYear() + (5 * direction));
+        break;
+      case '10y':
+        newDate.setFullYear(newDate.getFullYear() + (10 * direction));
+        break;
+      case '100y':
+        newDate.setFullYear(newDate.getFullYear() + (100 * direction));
+        break;
+      default:
+        return;
+    }
+
+    this.solarSystem.currentSimDate = newDate;
+
+    if (this.dom.liveSyncBtn) {
+      this.dom.liveSyncBtn.classList.remove('active');
     }
   }
 
