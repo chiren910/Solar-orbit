@@ -13,7 +13,6 @@ export class UIController {
 
     this.selectedBodyId = 'sun';
     this.isDossierOpen = false;
-    this.timeJumpForward = true;
     this.justClosedDossierTime = 0;
 
     // Cache DOM Elements
@@ -70,8 +69,6 @@ export class UIController {
       vsrSpeedBadge: document.getElementById('vsr-speed-badge'),
       vsrRail: document.getElementById('vertical-speed-rail'),
       timeJumpPanel: document.getElementById('time-jump-panel'),
-      tjDirectionToggle: document.getElementById('tj-direction-toggle'),
-      tjDirectionIcon: document.getElementById('tj-direction-icon'),
       hudToggleBtn: document.getElementById('hud-toggle-btn'),
       hudToggleIcon: document.getElementById('hud-toggle-icon')
     };
@@ -408,16 +405,6 @@ export class UIController {
       });
     });
 
-    if (this.dom.tjDirectionToggle) {
-      this.dom.tjDirectionToggle.addEventListener('click', () => {
-        this.timeJumpForward = !this.timeJumpForward;
-        this.dom.tjDirectionToggle.innerHTML = this.timeJumpForward
-          ? '<span id="tj-direction-icon">&#9654;</span> FWD'
-          : '<span id="tj-direction-icon">&#9664;</span> BWD';
-        this.dom.tjDirectionToggle.classList.toggle('backward', !this.timeJumpForward);
-      });
-    }
-
     // 10f. Vertical Speed Rail (Volume-Style)
     if (this.dom.vsrSlider) {
       // Create visible thumb overlay
@@ -658,7 +645,7 @@ export class UIController {
    * Perform an instant time jump on the simulation date
    */
   performTimeJump(jumpKey) {
-    const direction = this.timeJumpForward ? 1 : -1;
+    const direction = 1;
     const currentDate = this.solarSystem.currentSimDate;
     const newDate = new Date(currentDate.getTime());
 
