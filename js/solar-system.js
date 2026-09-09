@@ -48,6 +48,7 @@ export class SolarSystem {
 
     // Interaction callbacks
     this.onPlanetSelected = null;
+    this.onEmptySpaceClicked = null;
     this.hoveredObject = null;
   }
 
@@ -915,6 +916,11 @@ export class SolarSystem {
       const hitId = intersects[0].object.userData.id;
       if (this.onPlanetSelected) {
         this.onPlanetSelected(hitId);
+      }
+    } else {
+      // User clicked on empty cosmic space outside any planet
+      if (this.onEmptySpaceClicked) {
+        this.onEmptySpaceClicked();
       }
     }
   }

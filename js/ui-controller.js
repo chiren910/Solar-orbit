@@ -13,6 +13,7 @@ export class UIController {
 
     this.selectedBodyId = 'sun';
     this.isDossierOpen = false;
+    this.justClosedDossierTime = 0;
 
     // Cache DOM Elements
     this.dom = {
@@ -37,6 +38,7 @@ export class UIController {
       ribbonItems: document.querySelectorAll('.planet-pill'),
       // Dossier
       dossier: document.getElementById('telemetry-dossier'),
+      dossierBackdrop: document.getElementById('dossier-backdrop'),
       dossierClose: document.getElementById('dossier-close-btn'),
       dossierTitle: document.getElementById('dossier-title'),
       dossierType: document.getElementById('dossier-type'),
@@ -60,7 +62,10 @@ export class UIController {
       toggleGrid: document.getElementById('toggle-grid'),
       keyShortcutsModal: document.getElementById('shortcuts-modal'),
       shortcutsBtn: document.getElementById('shortcuts-btn'),
-      shortcutsCloseBtn: document.getElementById('shortcuts-close-btn')
+      shortcutsCloseBtn: document.getElementById('shortcuts-close-btn'),
+      hudHeader: document.getElementById('hud-header'),
+      hudToggleBtn: document.getElementById('hud-toggle-btn'),
+      hudToggleIcon: document.getElementById('hud-toggle-icon')
     };
 
     // Default simulation speed: 1.0 (Real-Time 1s = 1s)
@@ -68,6 +73,11 @@ export class UIController {
 
     this.bindEvents();
     this.updateDossier('sun');
+
+    // If opening in mobile view, automatically show planet detail
+    if (window.innerWidth <= 768) {
+      this.openDossier('sun');
+    }
   }
 
   /**
@@ -245,24 +255,89 @@ export class UIController {
 
     // 8. 3D Scene Interaction Hook
     this.solarSystem.onPlanetSelected = (id) => {
+      // If dossier was just closed by an outside click within 250ms, do not immediately reopen
+      if (performance.now() - this.justClosedDossierTime < 250) {
+        return;
+      }
+      // If the dossier is already open for this exact body, clicking it in 3D closes it
+      if (this.isDossierOpen && this.selectedBodyId === id) {
+        this.closeDossier();
+        return;
+      }
       this.selectCelestialBody(id);
     };
 
     // 9. Dossier Close & Focus
     if (this.dom.dossierClose) {
-      this.dom.dossierClose.addEventListener('click', () => {
-        this.dom.dossier.classList.remove('open');
-        this.isDossierOpen = false;
+      this.dom.dossierClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeDossier();
       });
     }
+
     if (this.dom.focusTargetBtn) {
-      this.dom.focusTargetBtn.addEventListener('click', () => {
+      this.dom.focusTargetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.camera.focusOn(this.selectedBodyId);
         this.audio.playWarpSound();
       });
     }
 
-    // 10. Keyboard Shortcuts Modal
+    // 9b. Backdrop tap/click to close dossier
+    if (this.dom.dossierBackdrop) {
+      const handleBackdrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeDossier();
+      };
+      this.dom.dossierBackdrop.addEventListener('click', handleBackdrop);
+      this.dom.dossierBackdrop.addEventListener('pointerup', handleBackdrop);
+      this.dom.dossierBackdrop.addEventListener('touchend', handleBackdrop);
+    }
+
+    // 9c. Universal document click/tap outside dossier
+    // 9c. Universal document click/tap outside dossier
+    document.addEventListener('pointerup', (e) => {
+      if (!this.isDossierOpen || !this.dom.dossier) return;
+
+      // If clicked inside the dossier card itself, keep open
+      if (this.dom.dossier.contains(e.target)) return;
+
+      // If clicked on a planet ribbon pill, selectCelestialBody will handle it
+      if (e.target.closest('.planet-pill')) return;
+
+      // If clicked on an active HUD control button, let that control function
+      if (e.target.closest('.hud-action-btn') || e.target.closest('.view-preset') || 
+          e.target.closest('.speed-preset') || e.target.closest('.hud-btn-circle') || 
+          e.target.closest('.hud-btn-pill') || e.target.closest('.speed-slider-wrap') ||
+          e.target.closest('#settings-drawer') || e.target.closest('#shortcuts-modal')) return;
+
+      // Clicked outside on 3D space, canvas, or backdrop -> close the dossier!
+      this.closeDossier();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!this.isDossierOpen || !this.dom.dossier) return;
+
+      // If clicked inside the dossier or on a planet ribbon pill, do not close
+      if (this.dom.dossier.contains(e.target) || e.target.closest('.planet-pill')) {
+        return;
+      }
+
+      // Clicked anywhere outside the details card -> close it
+      this.closeDossier();
+    });
+
+    // 9d. 3D Empty space click
+    if (this.solarSystem) {
+      this.solarSystem.onEmptySpaceClicked = () => {
+        if (this.isDossierOpen) {
+          this.closeDossier();
+        }
+      };
+    }
+
+        // 10. Keyboard Shortcuts & Touch Gestures Modal
     if (this.dom.shortcutsBtn && this.dom.keyShortcutsModal) {
       this.dom.shortcutsBtn.addEventListener('click', () => {
         this.dom.keyShortcutsModal.classList.add('open');
@@ -272,6 +347,40 @@ export class UIController {
       this.dom.shortcutsCloseBtn.addEventListener('click', () => {
         this.dom.keyShortcutsModal.classList.remove('open');
       });
+    }
+    if (this.dom.keyShortcutsModal) {
+      this.dom.keyShortcutsModal.addEventListener('click', (e) => {
+        if (e.target === this.dom.keyShortcutsModal) {
+          this.dom.keyShortcutsModal.classList.remove('open');
+        }
+      });
+    }
+
+    // 10b. Mobile HUD Toggle Button (Collapse / Expand Controls)
+    if (this.dom.hudToggleBtn && this.dom.hudHeader) {
+      this.dom.hudToggleBtn.addEventListener('click', () => {
+        const isCollapsed = this.dom.hudHeader.classList.toggle('hud-collapsed');
+        if (this.dom.hudToggleIcon) {
+          this.dom.hudToggleIcon.textContent = isCollapsed ? '▼' : '▲';
+        }
+      });
+    }
+
+    // 10c. Mobile Dossier Drag Handle Touch Gesture
+    const dragHandle = document.querySelector('.dossier-drag-handle');
+    if (dragHandle && this.dom.dossier) {
+      let startTouchY = 0;
+      dragHandle.addEventListener('touchstart', (e) => {
+        startTouchY = e.touches[0].clientY;
+      }, { passive: true });
+
+      dragHandle.addEventListener('touchmove', (e) => {
+        const diffY = e.touches[0].clientY - startTouchY;
+        if (diffY > 40) {
+          this.dom.dossier.classList.remove('open');
+          this.isDossierOpen = false;
+        }
+      }, { passive: true });
     }
 
     // 11. Global Keyboard Listeners
@@ -313,6 +422,32 @@ export class UIController {
     }
   }
 
+  openDossier(bodyId = null) {
+    if (bodyId && CELESTIAL_DATA[bodyId]) {
+      this.selectedBodyId = bodyId;
+      this.updateDossier(bodyId);
+      this.highlightRibbon(bodyId);
+    }
+    if (this.dom.dossier) {
+      this.dom.dossier.classList.add('open');
+      this.isDossierOpen = true;
+    }
+    if (this.dom.dossierBackdrop) {
+      this.dom.dossierBackdrop.classList.add('open');
+    }
+  }
+
+  closeDossier() {
+    this.justClosedDossierTime = performance.now();
+    if (this.dom.dossier) {
+      this.dom.dossier.classList.remove('open');
+      this.isDossierOpen = false;
+    }
+    if (this.dom.dossierBackdrop) {
+      this.dom.dossierBackdrop.classList.remove('open');
+    }
+  }
+
   selectCelestialBody(bodyId) {
     if (!CELESTIAL_DATA[bodyId]) return;
 
@@ -327,18 +462,22 @@ export class UIController {
     this.audio.playWarpSound();
     this.highlightRibbon(bodyId);
     this.updateDossier(bodyId);
-
-    // Open dossier if closed
-    if (this.dom.dossier) {
-      this.dom.dossier.classList.add('open');
-      this.isDossierOpen = true;
-    }
+    this.openDossier();
   }
 
   highlightRibbon(bodyId) {
     if (!this.dom.ribbonItems) return;
     this.dom.ribbonItems.forEach(item => {
-      item.classList.toggle('active', item.dataset.planet === bodyId);
+      const isActive = item.dataset.planet === bodyId;
+      item.classList.toggle('active', isActive);
+      if (isActive) {
+        try {
+          item.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        } catch (err) {
+          // Fallback for older browsers
+          item.scrollIntoView(false);
+        }
+      }
     });
   }
 

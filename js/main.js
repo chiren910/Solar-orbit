@@ -62,6 +62,10 @@ class App {
           this.loadingOverlay.classList.add('fade-out');
           setTimeout(() => {
             this.loadingOverlay.style.display = 'none';
+            // When opening in mobile view, show planet detail
+            if (window.innerWidth <= 768 && this.uiController) {
+              this.uiController.openDossier('sun');
+            }
           }, 600);
         }
       }, 400);

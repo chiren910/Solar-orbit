@@ -1,13 +1,14 @@
 /* ==========================================================================
    ORBIT - Modern 3D Solar System Experience Design System
    Aesthetic: Sci-Fi Glassmorphism, Deep Cosmos, Luminous HUD Accents
+   Mobile & Touchscreen Responsive Architecture (v4.0)
    ========================================================================== */
 
 :root {
   --bg-deep-space: #020308;
-  --bg-hud: rgba(8, 14, 28, 0.72);
-  --bg-hud-card: rgba(14, 23, 44, 0.65);
-  --bg-hud-hover: rgba(22, 36, 68, 0.85);
+  --bg-hud: rgba(8, 14, 28, 0.76);
+  --bg-hud-card: rgba(14, 23, 44, 0.70);
+  --bg-hud-hover: rgba(22, 36, 68, 0.88);
 
   --accent-cyan: #00f0ff;
   --accent-cyan-glow: rgba(0, 240, 255, 0.35);
@@ -20,7 +21,7 @@
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
 
-  --border-glass: rgba(0, 240, 255, 0.18);
+  --border-glass: rgba(0, 240, 255, 0.22);
   --border-glass-subtle: rgba(255, 255, 255, 0.08);
 
   --font-display: 'Orbitron', -apple-system, sans-serif;
@@ -30,6 +31,12 @@
   --blur-hud: blur(18px);
   --shadow-hud: 0 12px 36px -6px rgba(0, 0, 0, 0.65), 0 0 24px -4px var(--accent-cyan-glow);
   --transition-smooth: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Safe Area Insets for iOS Notch & Android System Bars */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 *, *::before, *::after {
@@ -48,6 +55,14 @@ html, body {
   color: var(--text-primary);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+/* Touch & Interaction defaults */
+button, input, select, .planet-pill, .speed-preset, .view-preset, .hud-action-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ==========================================================================
@@ -60,6 +75,14 @@ html, body {
   width: 100%;
   height: 100%;
   z-index: 1;
+  touch-action: none;
+}
+
+#webgl-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
 }
 
 /* ==========================================================================
@@ -75,6 +98,7 @@ html, body {
   align-items: center;
   justify-content: center;
   transition: opacity 0.6s ease, visibility 0.6s ease;
+  padding: 20px;
 }
 
 #loading-overlay.fade-out {
@@ -162,10 +186,12 @@ html, body {
   color: var(--text-primary);
   margin-bottom: 12px;
   text-shadow: 0 0 20px var(--accent-cyan);
+  text-align: center;
 }
 
 .loading-progress-container {
   width: 260px;
+  max-width: 80vw;
   height: 4px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
@@ -186,16 +212,17 @@ html, body {
   font-size: 12px;
   color: var(--text-secondary);
   letter-spacing: 1px;
+  text-align: center;
 }
 
 /* ==========================================================================
-   HUD Header & Navigation Bar
+   HUD Header & Navigation System
    ========================================================================== */
 .hud-header {
   position: absolute;
-  top: 16px;
-  left: 18px;
-  right: 18px;
+  top: max(16px, var(--safe-top));
+  left: max(18px, var(--safe-left));
+  right: max(18px, var(--safe-right));
   z-index: 10;
   display: flex;
   align-items: center;
@@ -208,7 +235,15 @@ html, body {
   pointer-events: auto;
 }
 
-/* Left Brand & Real-Time Date Pill */
+/* Top Bar: Brand & Utility Icons on Desktop */
+.hud-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Brand Section & Simulated Date */
 .brand-section {
   display: flex;
   align-items: center;
@@ -289,7 +324,16 @@ html, body {
   overflow: hidden;
 }
 
-/* Center Simulation Time Controls Bar */
+/* Secondary Collapsible Controls Container */
+.hud-collapsible-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   Simulation Time Controls Panel
+   ========================================================================== */
 .time-controls-panel {
   display: flex;
   align-items: center;
@@ -302,6 +346,13 @@ html, body {
   border: 1px solid var(--border-glass);
   box-shadow: var(--shadow-hud);
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.time-primary-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -387,6 +438,12 @@ html, body {
   transform: translateY(-1px);
 }
 
+.play-btn-gold.paused {
+  background: rgba(0, 240, 255, 0.2) !important;
+  border-color: var(--accent-cyan) !important;
+  color: var(--accent-cyan) !important;
+}
+
 .speed-slider-wrap {
   display: flex;
   align-items: center;
@@ -425,8 +482,8 @@ html, body {
 .speed-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--accent-cyan);
   cursor: pointer;
@@ -461,6 +518,7 @@ html, body {
   flex-shrink: 0;
 }
 
+/* Speed Presets Group - Preserved 100% on All Devices */
 .speed-presets-group {
   display: flex;
   align-items: center;
@@ -500,8 +558,30 @@ html, body {
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
 }
 
-/* Header Right View Presets & Utility Tools */
-.header-actions {
+/* ==========================================================================
+   View Presets & Header Utility Actions
+   ========================================================================== */
+.view-presets-container {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.view-presets-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-hud);
+  backdrop-filter: var(--blur-hud);
+  -webkit-backdrop-filter: var(--blur-hud);
+  padding: 5px 10px;
+  border-radius: 40px;
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-hud);
+  flex-shrink: 0;
+}
+
+.header-utility-group {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -548,28 +628,94 @@ html, body {
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(99, 102, 241, 0.35));
   border: 1px solid rgba(168, 85, 247, 0.5);
   color: #ffffff;
-  padding: 3px 10px;
-  line-height: 1.05;
+  padding: 4px 12px;
 }
 
-.tour-btn .tour-icon {
+.tour-btn:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), rgba(99, 102, 241, 0.5));
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.45);
+}
+
+.tour-btn.active {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.4), rgba(220, 38, 38, 0.5));
+  border-color: #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+}
+
+.tour-icon {
   font-size: 14px;
 }
 
-.tour-btn .tour-text {
+.tour-text {
+  font-family: var(--font-display);
   font-size: 10px;
-  font-weight: 600;
-  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.hud-action-btn.active {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 12px var(--accent-cyan-glow);
+}
+
+/* Mobile HUD Toggle Button (Hidden on Desktop) */
+.hud-toggle-btn {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-glass);
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--accent-cyan);
+  font-size: 11px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.hud-toggle-btn:active {
+  transform: scale(0.92);
+  background: rgba(0, 240, 255, 0.25);
+}
+
+/* Mobile Dossier Backdrop (Click Outside to Close) */
+.dossier-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 45;
+  background: rgba(2, 4, 10, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .dossier-backdrop.open {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
 }
 
 /* ==========================================================================
-   Left Side: Planet Telemetry Dossier Panel
+   Left Side: Collapsible Planet Telemetry Dossier
    ========================================================================== */
 .telemetry-dossier {
   position: absolute;
   top: 86px;
   left: 20px;
-  width: 360px;
+  width: 340px;
   max-height: calc(100vh - 180px);
   background: var(--bg-hud);
   backdrop-filter: var(--blur-hud);
@@ -580,11 +726,11 @@ html, body {
   z-index: 20;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  transform: translateX(-400px);
+  transform: translateX(-390px);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  overflow: hidden;
 }
 
 .telemetry-dossier.open {
@@ -593,11 +739,15 @@ html, body {
   pointer-events: auto;
 }
 
+.dossier-drag-handle {
+  display: none; /* Visible in mobile bottom sheet view */
+}
+
 .dossier-header {
-  padding: 16px 20px 12px 20px;
+  padding: 16px 20px 14px 20px;
   border-bottom: 1px solid var(--border-glass-subtle);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   background: linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, transparent 100%);
 }
@@ -644,6 +794,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dossier-body::-webkit-scrollbar {
@@ -707,14 +858,6 @@ html, body {
   gap: 6px;
 }
 
-.section-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-muted);
-}
-
 .atmos-tags-wrap {
   display: flex;
   flex-wrap: wrap;
@@ -755,6 +898,7 @@ html, body {
 .dossier-actions {
   display: flex;
   gap: 10px;
+  margin-top: 4px;
 }
 
 .primary-hud-btn {
@@ -781,12 +925,16 @@ html, body {
   transform: translateY(-1px);
 }
 
+.primary-hud-btn:active {
+  transform: scale(0.98);
+}
+
 /* ==========================================================================
    Bottom: Planet Selector Ribbon
    ========================================================================== */
 .planet-ribbon-container {
   position: absolute;
-  bottom: 20px;
+  bottom: max(20px, var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -803,6 +951,7 @@ html, body {
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .planet-ribbon-container::-webkit-scrollbar {
@@ -825,6 +974,10 @@ html, body {
 .planet-pill:hover {
   background: rgba(255, 255, 255, 0.08);
   transform: translateY(-2px);
+}
+
+.planet-pill:active {
+  transform: scale(0.95);
 }
 
 .planet-pill.active {
@@ -862,7 +1015,7 @@ html, body {
   border-radius: 20px;
   border: 1px solid var(--border-glass);
   box-shadow: var(--shadow-hud);
-  z-index: 20;
+  z-index: 60;
   display: flex;
   flex-direction: column;
   transform: translateX(340px);
@@ -903,6 +1056,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 4px 0;
 }
 
 .setting-label-wrap {
@@ -925,8 +1079,9 @@ html, body {
 .switch {
   position: relative;
   display: inline-block;
-  width: 42px;
-  height: 22px;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
 .switch input {
@@ -940,15 +1095,15 @@ html, body {
   cursor: pointer;
   inset: 0;
   background-color: rgba(255, 255, 255, 0.15);
-  border-radius: 22px;
+  border-radius: 24px;
   transition: 0.3s;
 }
 
 .slider::before {
   position: absolute;
   content: "";
-  height: 16px;
-  width: 16px;
+  height: 18px;
+  width: 18px;
   left: 3px;
   bottom: 3px;
   background-color: #ffffff;
@@ -966,15 +1121,15 @@ input:checked + .slider::before {
 }
 
 /* ==========================================================================
-   Keyboard Shortcuts Modal
+   Keyboard & Touch Shortcuts Modal
    ========================================================================== */
 .shortcuts-modal {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(2, 4, 10, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(2, 4, 10, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -982,6 +1137,7 @@ input:checked + .slider::before {
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+  padding: 16px;
 }
 
 .shortcuts-modal.open {
@@ -991,86 +1147,502 @@ input:checked + .slider::before {
 }
 
 .shortcuts-content {
-  width: 420px;
-  max-width: 90vw;
+  width: 460px;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow-y: auto;
   background: var(--bg-hud);
   backdrop-filter: var(--blur-hud);
   -webkit-backdrop-filter: var(--blur-hud);
   border-radius: 20px;
   border: 1px solid var(--border-glass);
   box-shadow: var(--shadow-hud);
-  padding: 24px;
+  padding: 22px 24px;
+}
+
+.shortcuts-content::-webkit-scrollbar {
+  width: 4px;
+}
+.shortcuts-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.2);
+  border-radius: 2px;
 }
 
 .shortcuts-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--border-glass-subtle);
   padding-bottom: 12px;
 }
 
 .shortcuts-title {
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: 1px;
+}
+
+.shortcuts-group-heading {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+  text-transform: uppercase;
 }
 
 .shortcuts-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .shortcut-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .shortcut-desc {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-secondary);
 }
 
 .kbd-badge {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 6px;
   padding: 3px 8px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10.5px;
+  font-weight: 600;
   color: var(--accent-cyan);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
-   Responsive Breakpoints
+   TABLET RESPONSIVE BREAKPOINT (<= 1180px)
    ========================================================================== */
-@media (max-width: 1024px) {
+@media (max-width: 1180px) {
   .hud-header {
     flex-wrap: wrap;
     gap: 10px;
   }
-  .time-controls-panel {
-    position: static;
-    transform: none;
+  .hud-collapsible-controls {
     order: 3;
     width: 100%;
     justify-content: center;
   }
 }
 
+/* ==========================================================================
+   MOBILE RESPONSIVE BREAKPOINT (<= 768px)
+   100% Feature Parity - All 6 Speed Presets & Views Preserved
+   ========================================================================== */
 @media (max-width: 768px) {
-  .telemetry-dossier {
-    width: calc(100vw - 40px);
-    max-height: 55vh;
+  .hud-header {
+    position: absolute;
+    top: max(10px, var(--safe-top));
+    left: max(10px, var(--safe-left));
+    right: max(10px, var(--safe-right));
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
   }
+
+  /* Top Bar: Brand on Left, Utility Tools on Right */
+  .hud-top-bar {
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .brand-section {
+    padding: 4px 10px;
+    gap: 8px;
+  }
+
+  .brand-name-stacked {
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    letter-spacing: 1.5px;
+  }
+
+  .brand-text-1, .brand-text-2 {
+    font-size: 11px;
+  }
+
+  .sim-date-badge {
+    width: 138px;
+    min-width: 138px;
+    max-width: 138px;
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  /* Header Utility Actions on Mobile */
+  .header-utility-group {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .header-utility-group .hud-action-btn {
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .header-utility-group .tour-btn {
+    width: auto;
+    padding: 0 8px;
+    border-radius: 16px;
+    height: 32px;
+  }
+
+  .header-utility-group .tour-text {
+    display: none; /* Icon remains clearly visible */
+  }
+
+  /* Show Mobile HUD Collapse/Expand Button */
+  .hud-toggle-btn {
+    display: flex;
+  }
+
+  /* Collapsible Controls Section */
+  .hud-collapsible-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+    transition: max-height 0.3s ease, opacity 0.25s ease;
+  }
+
+  /* Collapsed HUD state */
+  .hud-header.hud-collapsed .hud-collapsible-controls {
+    display: none;
+  }
+
+  /* Camera View Presets Ribbon on Mobile */
+  .view-presets-container {
+    width: 100%;
+  }
+
+  .view-presets-group {
+    width: 100%;
+    justify-content: space-between;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .view-preset {
+    flex: 1;
+    justify-content: center;
+    padding: 5px 6px;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  /* Time & Speed Controls Panel on Mobile */
+  .time-controls-panel {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 12px;
+    border-radius: 20px;
+    gap: 8px;
+  }
+
+  /* Row 1: LIVE, Reverse, Play/Pause, Slider + Readout */
+  .time-primary-row {
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .hud-btn-pill {
+    height: 30px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+
+  .hud-btn-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .speed-slider-wrap {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    padding: 0 2px;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  .speed-slider {
+    flex: 1;
+    width: auto;
+    min-width: 48px;
+    max-width: 110px;
+  }
+
+  .speed-label {
+    width: 48px;
+    min-width: 48px;
+    font-size: 10px;
+  }
+
+  /* Divider transforms into horizontal line */
+  .panel-divider {
+    width: 100%;
+    height: 1px;
+    margin: 0;
+    opacity: 0.5;
+  }
+
+  /* Row 2: All 6 Speed Presets - 100% Preserved & Swipeable */
   .speed-presets-group {
+    display: flex !important;
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px 0;
+  }
+
+  .speed-presets-group::-webkit-scrollbar {
     display: none;
   }
-  .brand-name {
-    display: none;
+
+  .speed-preset {
+    flex: 1;
+    min-width: 42px;
+    padding: 4px 4px;
+    font-size: 10.5px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .speed-preset .preset-sub {
+    font-size: 8px;
+  }
+
+  /* Telemetry Dossier: Transforms into a Native-Feeling Glass Bottom Sheet */
+  .telemetry-dossier {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 64vh;
+    border-radius: 24px 24px 0 0;
+    border-bottom: none;
+    transform: translateY(105%);
+    opacity: 0;
+    z-index: 50;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.85), 0 0 30px var(--accent-cyan-glow);
+    transition: transform 0.36s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  }
+
+  .telemetry-dossier.open {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .dossier-drag-handle {
+    display: block;
+    width: 42px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(0, 240, 255, 0.45);
+    margin: 8px auto 2px auto;
+    flex-shrink: 0;
+  }
+
+  .dossier-header {
+    padding: 8px 18px 10px 18px;
+  }
+
+  .dossier-title {
+    font-size: 18px;
+  }
+
+  .dossier-body {
+    padding: 12px 18px 24px 18px;
+    gap: 12px;
+    max-height: calc(64vh - 65px);
+  }
+
+  .telemetry-grid {
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .stat-card-label {
+    font-size: 9px;
+  }
+
+  .stat-card-value {
+    font-size: 12px;
+  }
+
+  .primary-hud-btn {
+    padding: 12px 16px;
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  /* Planet Ribbon on Mobile */
+  .planet-ribbon-container {
+    bottom: max(12px, var(--safe-bottom));
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    padding: 6px 8px;
+    gap: 5px;
+    scroll-snap-type: x proximity;
+  }
+
+  .planet-pill {
+    padding: 6px 10px;
+    min-height: 36px;
+    scroll-snap-align: center;
+  }
+
+  .pill-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .pill-label {
+    font-size: 11.5px;
+  }
+
+  /* Settings Drawer on Mobile */
+  .settings-drawer {
+    top: max(64px, calc(var(--safe-top) + 52px));
+    left: 14px;
+    right: 14px;
+    width: auto;
+    max-width: calc(100vw - 28px);
+    transform: translateY(-20px) scale(0.96);
+    border-radius: 18px;
+  }
+
+  .settings-drawer.open {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   COMPACT MOBILE SCREENS (<= 400px - iPhone SE, Galaxy S)
+   ========================================================================== */
+@media (max-width: 400px) {
+  .brand-section {
+    padding: 3px 8px;
+    gap: 6px;
+  }
+
+  .brand-name-stacked {
+    display: none; /* Logo + date remains visible for compact elegance */
+  }
+
+  .sim-date-badge {
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+    font-size: 9.5px;
+    padding: 2px 4px;
+  }
+
+  .speed-preset {
+    min-width: 38px;
+    padding: 3px 2px;
+    font-size: 9.5px;
+  }
+
+  .view-preset {
+    font-size: 10px;
+    padding: 4px 4px;
+  }
+
+  .stat-card-value {
+    font-size: 11px;
+  }
+}
+
+/* ==========================================================================
+   MOBILE LANDSCAPE ORIENTATION (Height <= 500px)
+   ========================================================================== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hud-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    top: max(6px, var(--safe-top));
+    left: max(10px, var(--safe-left));
+    right: max(10px, var(--safe-right));
+  }
+
+  .hud-collapsible-controls {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+  }
+
+  .time-controls-panel {
+    flex-direction: row;
+    padding: 4px 10px;
+    width: auto;
+  }
+
+  .panel-divider {
+    width: 1px;
+    height: 20px;
+  }
+
+  .telemetry-dossier {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: 310px;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0 20px 20px 0;
+    transform: translateX(-105%);
+  }
+
+  .telemetry-dossier.open {
+    transform: translateX(0);
+  }
+
+  .planet-ribbon-container {
+    bottom: max(6px, var(--safe-bottom));
+    padding: 4px 8px;
+  }
+
+  .planet-pill {
+    min-height: 30px;
+    padding: 4px 8px;
   }
 }

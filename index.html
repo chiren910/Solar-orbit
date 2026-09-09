@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ORBIT - 3D Solar System Interactive Simulation</title>
   <meta name="description" content="Explore an interactive, scientifically calibrated 3D Solar System animation with accurate Keplerian orbits, photorealistic planets, and live astronomical telemetry.">
 
@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-  <!-- Main Stylesheet (Cache-Busted) -->
-  <link rel="stylesheet" href="css/style.css?v=3.5">
+  <!-- Main Stylesheet (Cache-Busted v4.0 for Mobile) -->
+  <link rel="stylesheet" href="css/style.css?v=4.3">
 
   <!-- Three.js r128 & OrbitControls CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -38,66 +38,88 @@
   </div>
 
   <!-- HUD Header & Global Navigation -->
-  <header class="hud-header">
-    <!-- Brand & Simulated Date -->
-    <div class="brand-section">
-      <span class="brand-logo">🪐</span>
-      <div class="brand-name-stacked">
-        <span class="brand-text-1">ORBIT</span>
-        <span class="brand-text-2">3D</span>
-      </div>
-      <span id="realtime-status-dot" class="realtime-dot active" title="Running in Real Time"></span>
-      <span id="sim-date" class="sim-date-badge">Loading...</span>
-    </div>
-
-    <!-- Center Simulation Time Controls -->
-    <div class="time-controls-panel">
-      <button id="live-sync-btn" class="hud-btn-pill active" title="Synchronize to Live Real Time">
-        <span class="pulse-dot"></span> LIVE
-      </button>
-      <button id="reverse-btn" class="hud-btn-circle" title="Reverse Time Direction">⏮</button>
-      <button id="play-pause-btn" class="hud-btn-circle play-btn-gold active" title="Pause / Resume Orbit Simulation">
-        <span id="play-pause-icon">▶</span>
-      </button>
-
-      <div class="speed-slider-wrap">
-        <span class="section-label">SPEED</span>
-        <input id="speed-slider" class="speed-slider" type="range" min="0" max="100" step="0.5" value="0">
-        <span id="speed-val" class="speed-label">1x Real</span>
+  <header id="hud-header" class="hud-header">
+    <!-- Top Bar: Brand, Real-Time Date & Utility Action Tools -->
+    <div class="hud-top-bar">
+      <!-- Brand & Simulated Date -->
+      <div class="brand-section">
+        <span class="brand-logo">🪐</span>
+        <div class="brand-name-stacked">
+          <span class="brand-text-1">ORBIT</span>
+          <span class="brand-text-2">3D</span>
+        </div>
+        <span id="realtime-status-dot" class="realtime-dot active" title="Running in Real Time"></span>
+        <span id="sim-date" class="sim-date-badge">Loading...</span>
       </div>
 
-      <div class="panel-divider"></div>
-
-      <div class="speed-presets-group">
-        <button class="speed-preset active" data-speed="1" title="Real Time (1s = 1s)">1x<br><span class="preset-sub">(Real)</span></button>
-        <button class="speed-preset" data-speed="60" title="1 Minute per second">1m/s</button>
-        <button class="speed-preset" data-speed="3600" title="1 Hour per second">1h/s</button>
-        <button class="speed-preset" data-speed="86400" title="1 Day per second">1d/s</button>
-        <button class="speed-preset" data-speed="2592000" title="1 Month per second">1mo/s</button>
-        <button class="speed-preset" data-speed="31536000" title="1 Year per second">1yr/s</button>
+      <!-- Quick Utility Buttons & Mobile HUD Toggle -->
+      <div class="header-utility-group">
+        <button id="tour-btn" class="hud-action-btn tour-btn" title="Automated Guided Tour">
+          <span class="tour-icon">🎬</span> <span class="tour-text">Cinematic<br>Tour</span>
+        </button>
+        <button id="audio-btn" class="hud-action-btn" title="Toggle Deep Space Ambient Soundscape">
+          <span id="audio-icon">🔇</span>
+        </button>
+        <button id="shortcuts-btn" class="hud-action-btn" title="Keyboard & Touch Shortcuts">⌨</button>
+        <button id="settings-toggle-btn" class="hud-action-btn" title="Display Options">⚙</button>
+        <button id="fullscreen-btn" class="hud-action-btn" title="Toggle Fullscreen">⛶</button>
+        <button id="hud-toggle-btn" class="hud-action-btn hud-toggle-btn" title="Toggle HUD Controls" aria-label="Toggle Controls">
+          <span id="hud-toggle-icon">▲</span>
+        </button>
       </div>
     </div>
 
-    <!-- Right Header Actions -->
-    <div class="header-actions">
-      <button class="view-preset active" data-view="overview" title="Full System Overview">Overview</button>
-      <button class="view-preset" data-view="topdown" title="Top-Down Ecliptic Plane">Top-Down</button>
-      <button class="view-preset" data-view="angled" title="45° Inclined Angle">Angled</button>
-      <button class="view-preset" data-view="inner" title="Inner Terrestrial Planets">Inner</button>
-      <button id="tour-btn" class="hud-action-btn tour-btn" title="Automated Guided Tour">
-        <span class="tour-icon">🎬</span> <span class="tour-text">Cinematic<br>Tour</span>
-      </button>
-      <button id="audio-btn" class="hud-action-btn" title="Toggle Deep Space Ambient Soundscape">
-        <span id="audio-icon">🔇</span>
-      </button>
-      <button id="shortcuts-btn" class="hud-action-btn" title="Keyboard Shortcuts">⌨</button>
-      <button id="settings-toggle-btn" class="hud-action-btn" title="Display Options">⚙</button>
-      <button id="fullscreen-btn" class="hud-action-btn" title="Toggle Fullscreen">⛶</button>
+    <!-- Secondary Controls Section (View Presets & Simulation Time Hub) -->
+    <div class="hud-collapsible-controls">
+      <!-- Camera View Presets Strip -->
+      <div class="view-presets-container">
+        <div class="view-presets-group">
+          <button class="view-preset active" data-view="overview" title="Full System Overview">Overview</button>
+          <button class="view-preset" data-view="topdown" title="Top-Down Ecliptic Plane">Top-Down</button>
+          <button class="view-preset" data-view="angled" title="45° Inclined Angle">Angled</button>
+          <button class="view-preset" data-view="inner" title="Inner Terrestrial Planets">Inner</button>
+        </div>
+      </div>
+
+      <!-- Center Simulation Time Controls Hub -->
+      <div class="time-controls-panel">
+        <div class="time-primary-row">
+          <button id="live-sync-btn" class="hud-btn-pill active" title="Synchronize to Live Real Time">
+            <span class="pulse-dot"></span> LIVE
+          </button>
+          <button id="reverse-btn" class="hud-btn-circle" title="Reverse Time Direction">⏮</button>
+          <button id="play-pause-btn" class="hud-btn-circle play-btn-gold active" title="Pause / Resume Orbit Simulation">
+            <span id="play-pause-icon">▶</span>
+          </button>
+
+          <div class="speed-slider-wrap">
+            <span class="section-label">SPEED</span>
+            <input id="speed-slider" class="speed-slider" type="range" min="0" max="100" step="0.5" value="0">
+            <span id="speed-val" class="speed-label">1x Real</span>
+          </div>
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <!-- All 6 Speed Presets - 100% Preserved & Mobile Swipeable -->
+        <div class="speed-presets-group">
+          <button class="speed-preset active" data-speed="1" title="Real Time (1s = 1s)">1x<br><span class="preset-sub">(Real)</span></button>
+          <button class="speed-preset" data-speed="60" title="1 Minute per second">1m/s</button>
+          <button class="speed-preset" data-speed="3600" title="1 Hour per second">1h/s</button>
+          <button class="speed-preset" data-speed="86400" title="1 Day per second">1d/s</button>
+          <button class="speed-preset" data-speed="2592000" title="1 Month per second">1mo/s</button>
+          <button class="speed-preset" data-speed="31536000" title="1 Year per second">1yr/s</button>
+        </div>
+      </div>
     </div>
   </header>
 
-  <!-- Left Side: Collapsible Planet Telemetry Dossier -->
+  <!-- Mobile Telemetry Dossier Backdrop (Click Outside to Close) -->
+  <div id="dossier-backdrop" class="dossier-backdrop"></div>
+
+  <!-- Collapsible Planet Telemetry Dossier (Transforms into Mobile Bottom Sheet on Small Screens) -->
   <aside id="telemetry-dossier" class="telemetry-dossier">
+    <div class="dossier-drag-handle"></div>
     <div class="dossier-header">
       <div class="dossier-title-wrap">
         <h2 id="dossier-title" class="dossier-title">The Sun</h2>
@@ -109,7 +131,7 @@
     <div class="dossier-body">
       <p id="dossier-desc" class="dossier-desc"></p>
 
-      <!-- Key Telemetry Metrics -->
+      <!-- Key Telemetry Metrics Grid -->
       <div class="telemetry-grid">
         <div class="stat-card full-width">
           <span class="stat-card-label">Distance from Sun</span>
@@ -178,7 +200,7 @@
     </div>
   </aside>
 
-  <!-- Bottom: Planet Selector Ribbon -->
+  <!-- Bottom: Planet Selector Ribbon (Touch Swipeable & Centered) -->
   <nav class="planet-ribbon-container">
     <button class="planet-pill active" data-planet="sun">
       <span class="pill-dot" style="background: #ffaa00; color: #ffaa00;"></span>
@@ -275,13 +297,37 @@
     </div>
   </aside>
 
-  <!-- Keyboard Shortcuts Modal -->
+  <!-- Keyboard Shortcuts & Touch Gestures Modal -->
   <div id="shortcuts-modal" class="shortcuts-modal">
     <div class="shortcuts-content">
       <div class="shortcuts-header">
-        <span class="shortcuts-title">KEYBOARD SHORTCUTS</span>
+        <span class="shortcuts-title">CONTROLS & GESTURES</span>
         <button id="shortcuts-close-btn" class="dossier-close-btn">✕</button>
       </div>
+
+      <!-- Touch Gestures Section for Mobile & Tablets -->
+      <div class="shortcuts-group-heading">📱 TOUCH GESTURES</div>
+      <div class="shortcuts-list" style="margin-bottom: 20px;">
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Orbit & Rotate Perspective</span>
+          <span class="kbd-badge">1-FINGER DRAG</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Smooth Zoom In / Out</span>
+          <span class="kbd-badge">2-FINGER PINCH</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Pan Camera Across Space</span>
+          <span class="kbd-badge">2-FINGER DRAG</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Select Celestial Body & Dossier</span>
+          <span class="kbd-badge">TAP PLANET</span>
+        </div>
+      </div>
+
+      <!-- Keyboard Shortcuts Section -->
+      <div class="shortcuts-group-heading">⌨️ KEYBOARD SHORTCUTS</div>
       <div class="shortcuts-list">
         <div class="shortcut-row">
           <span class="shortcut-desc">Play / Pause Simulation</span>
@@ -306,10 +352,6 @@
         <div class="shortcut-row">
           <span class="shortcut-desc">Focus Planets 1 to 9 (Mercury - Pluto)</span>
           <span class="kbd-badge">1 - 9</span>
-        </div>
-        <div class="shortcut-row">
-          <span class="shortcut-desc">Orbit, Pan & Zoom</span>
-          <span class="kbd-badge">MOUSE L / R / SCROLL</span>
         </div>
       </div>
     </div>
