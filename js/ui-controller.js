@@ -60,6 +60,10 @@ export class UIController {
       toggleLabels: document.getElementById('toggle-labels'),
       toggleAsteroids: document.getElementById('toggle-asteroids'),
       toggleGrid: document.getElementById('toggle-grid'),
+      toggleBloom: document.getElementById('toggle-bloom'),
+      toggleNightLights: document.getElementById('toggle-night-lights'),
+      toggleHabitableZone: document.getElementById('toggle-habitable-zone'),
+      habitableZoneBtn: document.getElementById('habitable-zone-btn'),
       keyShortcutsModal: document.getElementById('shortcuts-modal'),
       shortcutsBtn: document.getElementById('shortcuts-btn'),
       shortcutsCloseBtn: document.getElementById('shortcuts-close-btn'),
@@ -250,6 +254,24 @@ export class UIController {
     }
     if (this.dom.toggleGrid) {
       this.dom.toggleGrid.addEventListener('change', (e) => this.solarSystem.toggleGrid(e.target.checked));
+    }
+    if (this.dom.toggleBloom) {
+      this.dom.toggleBloom.addEventListener('change', (e) => this.solarSystem.toggleBloom(e.target.checked));
+    }
+    if (this.dom.toggleNightLights) {
+      this.dom.toggleNightLights.addEventListener('change', (e) => this.solarSystem.toggleNightLights(e.target.checked));
+    }
+    if (this.dom.toggleHabitableZone) {
+      this.dom.toggleHabitableZone.addEventListener('change', (e) => {
+        this.solarSystem.showHabitableZone = e.target.checked;
+        this.solarSystem.toggleHabitableZone(e.target.checked);
+        if (this.dom.habitableZoneBtn) {
+          this.dom.habitableZoneBtn.classList.toggle('active', e.target.checked);
+        }
+      });
+    }
+    if (this.dom.habitableZoneBtn) {
+      this.dom.habitableZoneBtn.addEventListener('click', () => this.toggleHabitableZone());
     }
 
     // 7. Planet Ribbon Click
@@ -487,6 +509,25 @@ export class UIController {
     }
   }
 
+  toggleHabitableZone() {
+    this.solarSystem.showHabitableZone = !this.solarSystem.showHabitableZone;
+    this.solarSystem.toggleHabitableZone(this.solarSystem.showHabitableZone);
+    if (this.dom.habitableZoneBtn) {
+      this.dom.habitableZoneBtn.classList.toggle('active', this.solarSystem.showHabitableZone);
+    }
+    if (this.dom.toggleHabitableZone) {
+      this.dom.toggleHabitableZone.checked = this.solarSystem.showHabitableZone;
+    }
+  }
+
+  toggleBloom() {
+    this.solarSystem.useBloom = !this.solarSystem.useBloom;
+    this.solarSystem.toggleBloom(this.solarSystem.useBloom);
+    if (this.dom.toggleBloom) {
+      this.dom.toggleBloom.checked = this.solarSystem.useBloom;
+    }
+  }
+
   openDossier(bodyId = null) {
     if (bodyId && CELESTIAL_DATA[bodyId]) {
       this.selectedBodyId = bodyId;
@@ -596,6 +637,14 @@ export class UIController {
       case 'KeyT':
         e.preventDefault();
         this.toggleTour();
+        break;
+      case 'KeyH':
+        e.preventDefault();
+        this.toggleHabitableZone();
+        break;
+      case 'KeyB':
+        e.preventDefault();
+        this.toggleBloom();
         break;
       case 'Escape':
         e.preventDefault();

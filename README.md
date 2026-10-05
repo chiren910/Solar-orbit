@@ -9,6 +9,9 @@ An interactive, scientifically calibrated, real-time 3D Solar System simulation 
 - **Accurate Astronomical Ephemeris**: Real-time heliocentric positioning of all 8 major planets plus Pluto and Earth's Moon.
 - **Calibrated Axial Rotations**: Realistic physical rotation periods for all celestial bodies (e.g., Earth's 23.93-hour day, Jupiter's 9.93-hour rapid spin, Venus's retrograde rotation).
 - **High-Fidelity Visuals & Shaders**:
+  - **Cinematic UnrealBloom Post-Processing**: Radiant incandescent solar corona, dynamic prominence loops, and glowing orbital paths.
+  - **Earth Day / Night Cycle & Night City Lights**: Custom fragment shader smoothly blending daylight NASA terrain, ocean specular sun reflections, sunset twilight terminator, and glowing illuminated metropolitan webs on the night side.
+  - **Circumstellar Habitable "Goldilocks" Zone**: Interactive holographic life zone overlay (0.95 to 1.67 AU) with animated light pulse wave and temperature boundary gradients.
   - Central Sun with dynamic corona flare shaders and PointLight radiance.
   - NASA surface textures with specular ocean reflections and bump maps.
   - Atmospheric limb glow scattering on Earth.
@@ -64,6 +67,8 @@ and navigate to `http://localhost/orbit/` in your browser.
 | `Space` | Pause / Resume time simulation |
 | `R` | Reset camera to overview |
 | `T` | Start / Stop Cinematic Tour |
+| `H` | Toggle Circumstellar Habitable "Goldilocks" Zone |
+| `B` | Toggle Cinematic UnrealBloom Glow |
 | `0` - `9` | Focus camera on Sun (`0`) to Pluto (`9`) |
 | `Esc` | Close active dossier or settings modal |
 | `Mouse Drag` | Orbit and rotate camera perspective |

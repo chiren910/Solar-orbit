@@ -22,11 +22,16 @@ export class SolarSystem {
     this.showAsteroids = true;
     this.showMoons = true;
     this.showGrid = false;
+    this.showHabitableZone = false;
+    this.useBloom = true;
+    this.showNightLights = true;
 
     // Three.js instances
     this.scene = null;
     this.camera = null;
     this.renderer = null;
+    this.composer = null;
+    this.bloomPass = null;
     this.controls = null;
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -40,8 +45,12 @@ export class SolarSystem {
     this.asteroidBelt = null;
     this.kuiperBelt = null;
     this.eclipticGrid = null;
+    this.habitableZone = null;
+    this.hzMaterial = null;
+    this.earthMaterial = null;
     this.sunLight = null;
     this.sunCorona = null;
+    this.sunProminences = [];
     this.earthClouds = null;
     this.moonObject = null;
     this.galileanMoons = [];
@@ -55,9 +64,11 @@ export class SolarSystem {
   async init() {
     this.setupRenderer();
     this.setupScene();
+    this.setupComposer();
     this.setupLighting();
     this.setupStarfield();
     this.buildCelestialBodies();
+    this.buildHabitableZone();
     this.buildAsteroidBelt();
     this.buildKuiperBelt();
     this.buildEclipticGrid();
@@ -99,6 +110,25 @@ export class SolarSystem {
     this.controls.maxDistance = 1800;
     this.controls.maxPolarAngle = Math.PI / 2 + 0.15;
     this.controls.target.set(0, 0, 0);
+  }
+
+  /**
+   * Setup Post-Processing EffectComposer with UnrealBloomPass for Cinematic Solar Radiance
+   */
+  setupComposer() {
+    if (typeof THREE.EffectComposer !== 'undefined' && typeof THREE.UnrealBloomPass !== 'undefined') {
+      const renderPass = new THREE.RenderPass(this.scene, this.camera);
+      const bloomPass = new THREE.UnrealBloomPass(
+        new THREE.Vector2(this.container.clientWidth, this.container.clientHeight),
+        1.15, // strength: cinematic glow
+        0.42, // radius: soft diffusion
+        0.62  // threshold: triggers on incandescent sun, corona, and night lights
+      );
+      this.bloomPass = bloomPass;
+      this.composer = new THREE.EffectComposer(this.renderer);
+      this.composer.addPass(renderPass);
+      this.composer.addPass(bloomPass);
+    }
   }
 
   setupLighting() {
@@ -234,17 +264,18 @@ export class SolarSystem {
     const sunTexture = this.loadTexture('textures/sunmap.jpg', () => TextureGenerator.generateSunTexture());
     
     const sunMat = new THREE.MeshBasicMaterial({
-      map: sunTexture
+      map: sunTexture,
+      color: 0xfff6dc
     });
     const sunMesh = new THREE.Mesh(sunGeo, sunMat);
     sunGroup.add(sunMesh);
 
     // Inner Corona Atmosphere Pulse
-    const coronaGeo = new THREE.SphereGeometry(data.visualRadius * 1.14, 48, 48);
+    const coronaGeo = new THREE.SphereGeometry(data.visualRadius * 1.15, 48, 48);
     const coronaMat = new THREE.MeshBasicMaterial({
-      color: 0xffaa22,
+      color: 0xffa018,
       transparent: true,
-      opacity: 0.38,
+      opacity: 0.42,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending
     });
@@ -252,16 +283,40 @@ export class SolarSystem {
     sunGroup.add(coronaMesh);
 
     // Outer Solar Flare Halo
-    const outerHaloGeo = new THREE.SphereGeometry(data.visualRadius * 1.32, 32, 32);
+    const outerHaloGeo = new THREE.SphereGeometry(data.visualRadius * 1.34, 32, 32);
     const outerHaloMat = new THREE.MeshBasicMaterial({
-      color: 0xff4400,
+      color: 0xff4800,
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.22,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending
     });
     const outerHalo = new THREE.Mesh(outerHaloGeo, outerHaloMat);
     sunGroup.add(outerHalo);
+
+    // Dynamic Solar Prominence Flare Arches
+    this.sunProminences = [];
+    const promCount = 6;
+    for (let p = 0; p < promCount; p++) {
+      const pAngle = (p / promCount) * Math.PI * 2;
+      const pRadius = data.visualRadius * 0.98;
+      const loopGeo = new THREE.TorusGeometry(data.visualRadius * 0.22, 0.45, 8, 24, Math.PI * 0.9);
+      const loopMat = new THREE.MeshBasicMaterial({
+        color: 0xff5500,
+        transparent: true,
+        opacity: 0.70,
+        blending: THREE.AdditiveBlending
+      });
+      const loopMesh = new THREE.Mesh(loopGeo, loopMat);
+      loopMesh.position.set(Math.cos(pAngle) * pRadius, (p % 2 === 0 ? 1 : -1) * 3, Math.sin(pAngle) * pRadius);
+      loopMesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      sunGroup.add(loopMesh);
+      this.sunProminences.push({
+        mesh: loopMesh,
+        speedX: (0.15 + (p * 0.05)) * (p % 2 === 0 ? 1 : -1),
+        speedY: (0.12 + (p * 0.04)) * (p % 2 === 0 ? -1 : 1)
+      });
+    }
 
     this.scene.add(sunGroup);
     this.sunCorona = coronaMesh;
@@ -359,14 +414,83 @@ export class SolarSystem {
         mapTex = this.loadTexture('textures/earthmap1k.jpg', () => TextureGenerator.generateEarthTexture());
         bumpTex = this.loadTexture('textures/earthbump1k.jpg');
         specTex = this.loadTexture('textures/earthspec1k.jpg');
-        planetMat = new THREE.MeshStandardMaterial({
-          map: mapTex,
-          bumpMap: bumpTex,
-          bumpScale: 0.12,
-          roughnessMap: specTex,
-          roughness: 0.85,
-          metalness: 0.12
+        const nightTex = TextureGenerator.generateEarthNightTexture();
+
+        planetMat = new THREE.ShaderMaterial({
+          uniforms: {
+            dayTexture: { value: mapTex },
+            nightTexture: { value: nightTex },
+            specularTexture: { value: specTex },
+            showNightLights: { value: this.showNightLights }
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            varying vec3 vWorldPosition;
+            varying vec3 vViewDirection;
+
+            void main() {
+              vUv = uv;
+              vec4 worldPos = modelMatrix * vec4(position, 1.0);
+              vWorldPosition = worldPos.xyz;
+              vNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+              vViewDirection = normalize(cameraPosition - worldPos.xyz);
+              gl_Position = projectionMatrix * viewMatrix * worldPos;
+            }
+          `,
+          fragmentShader: `
+            uniform sampler2D dayTexture;
+            uniform sampler2D nightTexture;
+            uniform sampler2D specularTexture;
+            uniform bool showNightLights;
+
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            varying vec3 vWorldPosition;
+            varying vec3 vViewDirection;
+
+            void main() {
+              vec3 normal = normalize(vNormal);
+              // Sun is at (0,0,0) in world coordinates
+              vec3 sunDir = normalize(-vWorldPosition);
+              vec3 viewDir = normalize(vViewDirection);
+
+              float sunDot = dot(normal, sunDir);
+
+              // Smooth day/night twilight terminator
+              float dayFactor = smoothstep(-0.12, 0.16, sunDot);
+              float nightFactor = 1.0 - dayFactor;
+
+              // Day surface texture
+              vec4 daySample = texture2D(dayTexture, vUv);
+              vec3 ambientDay = daySample.rgb * 0.10;
+              vec3 diffuseDay = daySample.rgb * max(sunDot, 0.0) * 1.20;
+
+              // Ocean Specular Glint (Phong reflection)
+              float specMask = texture2D(specularTexture, vUv).r;
+              vec3 reflectDir = reflect(-sunDir, normal);
+              float specAngle = max(dot(viewDir, reflectDir), 0.0);
+              float spec = pow(specAngle, 30.0) * specMask * 1.35 * float(sunDot > 0.0);
+              vec3 specularColor = vec3(0.95, 0.98, 1.0) * spec;
+
+              // Warm sunset twilight along the terminator
+              float terminator = 1.0 - smoothstep(0.0, 0.16, abs(sunDot));
+              vec3 sunsetGlow = vec3(1.0, 0.44, 0.14) * terminator * 0.45;
+
+              // Night city lights emission
+              vec3 nightColor = vec3(0.0);
+              if (showNightLights) {
+                vec3 nightSample = texture2D(nightTexture, vUv).rgb;
+                nightColor = nightSample * nightFactor * 2.4;
+              }
+
+              vec3 finalColor = ambientDay + diffuseDay + specularColor + sunsetGlow + nightColor;
+              gl_FragColor = vec4(finalColor, 1.0);
+            }
+          `
         });
+        this.earthMaterial = planetMat;
+
         // Earth atmospheric Rayleigh scattering glow (cyan/blue)
         bodyGroup.add(this.createAtmosphereGlow(data.visualRadius, 0x00a2ff, 2.3));
         break;
@@ -699,6 +823,113 @@ export class SolarSystem {
   }
 
   /**
+   * Circumstellar Habitable "Goldilocks" Life Zone
+   * Displays the optimal circumstellar orbital zone (0.95 to 1.67 AU)
+   * where liquid water can exist on planetary surfaces.
+   */
+  buildHabitableZone() {
+    const hzGroup = new THREE.Group();
+
+    // Visual inner and outer radii calibrated to planetary orbits (Venus at 52, Earth at 72, Mars at 94)
+    const innerRadius = 60; // ~0.83 AU
+    const outerRadius = 108; // ~1.50 AU
+    const hzGeo = new THREE.RingGeometry(innerRadius, outerRadius, 128);
+    hzGeo.rotateX(Math.PI / 2); // Align with ecliptic plane
+
+    this.hzMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        innerR: { value: innerRadius },
+        outerR: { value: outerRadius }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vWorldPos;
+        void main() {
+          vUv = uv;
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vWorldPos = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }
+      `,
+      fragmentShader: `
+        uniform float time;
+        uniform float innerR;
+        uniform float outerR;
+        varying vec2 vUv;
+        varying vec3 vWorldPos;
+
+        void main() {
+          float r = length(vWorldPos.xz);
+          float normR = (r - innerR) / (outerR - innerR);
+          if (normR < 0.0 || normR > 1.0) discard;
+
+          // Outward light-speed pulse wave
+          float wave = sin(normR * 14.0 - time * 2.0) * 0.12 + 0.88;
+
+          // Color gradient:
+          // Inner edge: Amber/Yellow (Venus Greenhouse Boundary)
+          // Center: Vibrant Emerald Green / Cyan (Earth Life Zone)
+          // Outer edge: Cyan Blue (Mars Freezing Boundary)
+          vec3 innerColor = vec3(1.0, 0.72, 0.15);
+          vec3 lifeColor = vec3(0.0, 1.0, 0.55);
+          vec3 outerColor = vec3(0.12, 0.58, 1.0);
+
+          vec3 color;
+          if (normR < 0.28) {
+            color = mix(innerColor, lifeColor, normR / 0.28);
+          } else {
+            color = mix(lifeColor, outerColor, (normR - 0.28) / 0.72);
+          }
+
+          // Smooth sinusoidal edge falloff (no harsh cuts)
+          float edge = sin(normR * 3.14159265);
+          edge = pow(edge, 0.65);
+
+          // Concentric holographic guide lines
+          float rings = sin(normR * 60.0) * 0.5 + 0.5;
+          rings = pow(rings, 5.0) * 0.35;
+
+          float alpha = (0.20 * edge * wave + rings * 0.28) * 0.82;
+
+          gl_FragColor = vec4(color + vec3(rings * 0.5), alpha);
+        }
+      `,
+      transparent: true,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const hzMesh = new THREE.Mesh(hzGeo, this.hzMaterial);
+    hzMesh.position.y = 0.05; // Slightly above ecliptic 0 to avoid z-fighting
+    hzGroup.add(hzMesh);
+
+    // Subtle holographic border rings
+    const createBorderLine = (radius, colorHex) => {
+      const pts = [];
+      for (let i = 0; i <= 96; i++) {
+        const a = (i / 96) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(a) * radius, 0.06, Math.sin(a) * radius));
+      }
+      const g = new THREE.BufferGeometry().setFromPoints(pts);
+      const m = new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending });
+      return new THREE.Line(g, m);
+    };
+
+    hzGroup.add(createBorderLine(innerRadius, 0xffbb22));
+    hzGroup.add(createBorderLine(outerRadius, 0x00a2ff));
+
+    // 3D Billboard Label for Habitable Zone
+    const labelSprite = this.create3DLabel('habitable_zone', '🌱 HABITABLE "GOLDILOCKS" ZONE (0.95 - 1.67 AU)', 0, 1.2, innerRadius + (outerRadius - innerRadius) * 0.5);
+    hzGroup.add(labelSprite);
+
+    this.habitableZone = hzGroup;
+    this.habitableZone.visible = this.showHabitableZone;
+    this.scene.add(hzGroup);
+  }
+
+  /**
    * Builds the 1,400+ Asteroid Belt using high-performance InstancedMesh
    */
   buildAsteroidBelt() {
@@ -943,6 +1174,14 @@ export class SolarSystem {
           const pulse = 1.0 + Math.sin(performance.now() * 0.002) * 0.03;
           this.sunCorona.scale.set(pulse, pulse, pulse);
         }
+
+        // Animate solar prominence loops
+        if (this.sunProminences && this.sunProminences.length > 0) {
+          this.sunProminences.forEach(prom => {
+            prom.mesh.rotation.x += prom.speedX * deltaSeconds;
+            prom.mesh.rotation.z += prom.speedY * deltaSeconds;
+          });
+        }
       }
 
       // 2. Update all Planets at their exact real-time astronomical positions
@@ -1044,8 +1283,17 @@ export class SolarSystem {
       });
     }
 
-    // Render Scene
-    this.renderer.render(this.scene, this.camera);
+    // 7. Update Habitable Zone wave shader animation
+    if (this.hzMaterial && this.showHabitableZone) {
+      this.hzMaterial.uniforms.time.value += deltaSeconds;
+    }
+
+    // 8. Render Scene with Cinematic UnrealBloom Post-Processing or fallback
+    if (this.useBloom && this.composer) {
+      this.composer.render(deltaSeconds);
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
   /**
@@ -1079,6 +1327,24 @@ export class SolarSystem {
     if (this.eclipticGrid) this.eclipticGrid.visible = visible;
   }
 
+  toggleBloom(enabled) {
+    this.useBloom = enabled;
+  }
+
+  toggleNightLights(enabled) {
+    this.showNightLights = enabled;
+    if (this.earthMaterial && this.earthMaterial.uniforms.showNightLights) {
+      this.earthMaterial.uniforms.showNightLights.value = enabled;
+    }
+  }
+
+  toggleHabitableZone(visible) {
+    this.showHabitableZone = visible;
+    if (this.habitableZone) {
+      this.habitableZone.visible = visible;
+    }
+  }
+
   /**
    * Sync simulation time directly back to live real-time
    */
@@ -1103,5 +1369,8 @@ export class SolarSystem {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
+    if (this.composer) {
+      this.composer.setSize(width, height);
+    }
   }
 }

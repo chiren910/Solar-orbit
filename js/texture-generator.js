@@ -269,6 +269,208 @@ export class TextureGenerator {
   }
 
   /**
+   * Generates Earth Night City Lights Texture
+   * Equirectangular map with realistic global metropolitan clusters,
+   * continental coastlines, arterial transit corridors, and radiant incandescent glow.
+   */
+  static generateEarthNightTexture() {
+    const { canvas, ctx } = this.createCanvas(1024, 512);
+
+    // Deep pitch-black night oceans and terrain
+    ctx.fillStyle = '#010204';
+    ctx.fillRect(0, 0, 1024, 512);
+
+    // Helper: convert (lat, lon) to canvas pixel coordinates
+    // lon: -180 to 180 -> 0 to 1024; lat: 90 to -90 -> 0 to 512
+    const toXY = (lat, lon) => ({
+      x: ((lon + 180) / 360) * 1024,
+      y: ((90 - lat) / 180) * 512
+    });
+
+    // 1. High-Density Population Corridors & Arterial Webs (drawn first as underlay)
+    const corridors = [
+      // North America: Bos-Wash Megalopolis
+      [{ lat: 42.36, lon: -71.05 }, { lat: 40.71, lon: -74.00 }, { lat: 39.95, lon: -75.16 }, { lat: 39.29, lon: -76.61 }, { lat: 38.90, lon: -77.03 }],
+      // North America: Great Lakes & Midwest
+      [{ lat: 41.87, lon: -87.62 }, { lat: 42.33, lon: -83.04 }, { lat: 41.50, lon: -81.69 }, { lat: 40.44, lon: -79.99 }, { lat: 40.71, lon: -74.00 }],
+      // North America: California Coast (SF to San Diego)
+      [{ lat: 37.77, lon: -122.41 }, { lat: 36.60, lon: -121.89 }, { lat: 34.42, lon: -119.70 }, { lat: 34.05, lon: -118.24 }, { lat: 32.71, lon: -117.16 }],
+      // North America: Texas Triangle
+      [{ lat: 32.77, lon: -96.79 }, { lat: 30.26, lon: -97.74 }, { lat: 29.42, lon: -98.49 }, { lat: 29.76, lon: -95.36 }, { lat: 32.77, lon: -96.79 }],
+      // Europe: "Blue Banana" Megalopolis (London -> Benelux -> Rhine -> Milan)
+      [{ lat: 51.50, lon: -0.12 }, { lat: 50.85, lon: 4.35 }, { lat: 51.22, lon: 6.77 }, { lat: 50.11, lon: 8.68 }, { lat: 48.77, lon: 9.18 }, { lat: 47.37, lon: 8.54 }, { lat: 45.46, lon: 9.19 }],
+      // Europe: Iberian connection
+      [{ lat: 41.38, lon: 2.17 }, { lat: 39.46, lon: -0.37 }, { lat: 40.41, lon: -3.70 }, { lat: 38.72, lon: -9.13 }],
+      // Egypt: Historic Nile River Ribbon (Luxor -> Cairo -> Alexandria)
+      [{ lat: 24.08, lon: 32.89 }, { lat: 25.68, lon: 32.63 }, { lat: 27.18, lon: 31.18 }, { lat: 29.98, lon: 31.25 }, { lat: 30.04, lon: 31.23 }, { lat: 31.20, lon: 29.91 }],
+      // Japan: Tokaido Megalopolis (Tokyo -> Nagoya -> Kyoto -> Osaka -> Kobe)
+      [{ lat: 35.67, lon: 139.65 }, { lat: 35.44, lon: 139.63 }, { lat: 35.18, lon: 136.90 }, { lat: 34.98, lon: 135.75 }, { lat: 34.69, lon: 135.50 }, { lat: 34.69, lon: 135.19 }],
+      // India: Indo-Gangetic Plain (Punjab -> Delhi -> Kanpur -> Varanasi -> Kolkata)
+      [{ lat: 31.63, lon: 74.87 }, { lat: 28.61, lon: 77.20 }, { lat: 27.17, lon: 78.00 }, { lat: 26.44, lon: 80.33 }, { lat: 25.31, lon: 82.97 }, { lat: 25.59, lon: 85.13 }, { lat: 22.57, lon: 88.36 }],
+      // China: Yangtze River Delta & Coastal Spine
+      [{ lat: 39.90, lon: 116.40 }, { lat: 36.65, lon: 117.12 }, { lat: 32.06, lon: 118.79 }, { lat: 31.23, lon: 121.47 }, { lat: 30.27, lon: 120.15 }, { lat: 26.07, lon: 119.30 }, { lat: 23.12, lon: 113.26 }]
+    ];
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    corridors.forEach(path => {
+      // Glow under-stroke
+      ctx.beginPath();
+      const start = toXY(path[0].lat, path[0].lon);
+      ctx.moveTo(start.x, start.y);
+      for (let i = 1; i < path.length; i++) {
+        const pt = toXY(path[i].lat, path[i].lon);
+        ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.strokeStyle = 'rgba(255, 175, 55, 0.28)';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+
+      // Sharp core stroke
+      ctx.strokeStyle = 'rgba(255, 230, 160, 0.65)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // 2. Global Major Cities & Metropolitan Nodes
+    const cities = [
+      // North America
+      { lat: 40.71, lon: -74.00, r: 9, i: 1.0 }, // New York
+      { lat: 42.36, lon: -71.05, r: 6, i: 0.9 }, // Boston
+      { lat: 39.95, lon: -75.16, r: 6, i: 0.9 }, // Philadelphia
+      { lat: 38.90, lon: -77.03, r: 7, i: 0.95 }, // Washington DC
+      { lat: 41.87, lon: -87.62, r: 8, i: 0.95 }, // Chicago
+      { lat: 42.33, lon: -83.04, r: 5, i: 0.8 }, // Detroit
+      { lat: 43.65, lon: -79.38, r: 7, i: 0.9 }, // Toronto
+      { lat: 45.50, lon: -73.56, r: 5, i: 0.8 }, // Montreal
+      { lat: 33.74, lon: -84.38, r: 7, i: 0.9 }, // Atlanta
+      { lat: 25.76, lon: -80.19, r: 6, i: 0.85 }, // Miami
+      { lat: 29.76, lon: -95.36, r: 7, i: 0.9 }, // Houston
+      { lat: 32.77, lon: -96.79, r: 7, i: 0.9 }, // Dallas
+      { lat: 34.05, lon: -118.24, r: 9, i: 1.0 }, // Los Angeles
+      { lat: 37.77, lon: -122.41, r: 8, i: 0.95 }, // San Francisco
+      { lat: 47.60, lon: -122.33, r: 6, i: 0.85 }, // Seattle
+      { lat: 33.44, lon: -112.07, r: 6, i: 0.85 }, // Phoenix
+      { lat: 39.73, lon: -104.99, r: 5, i: 0.8 }, // Denver
+      { lat: 36.16, lon: -115.13, r: 6, i: 0.95 }, // Las Vegas
+      { lat: 19.43, lon: -99.13, r: 8, i: 0.95 }, // Mexico City
+
+      // Europe
+      { lat: 51.50, lon: -0.12, r: 9, i: 1.0 }, // London
+      { lat: 48.85, lon: 2.35, r: 8, i: 0.95 }, // Paris
+      { lat: 50.85, lon: 4.35, r: 6, i: 0.9 }, // Brussels
+      { lat: 52.36, lon: 4.90, r: 6, i: 0.9 }, // Amsterdam
+      { lat: 51.22, lon: 6.77, r: 7, i: 0.95 }, // Ruhr Germany
+      { lat: 52.52, lon: 13.40, r: 6, i: 0.85 }, // Berlin
+      { lat: 48.13, lon: 11.58, r: 5, i: 0.8 }, // Munich
+      { lat: 45.46, lon: 9.19, r: 7, i: 0.9 }, // Milan
+      { lat: 41.90, lon: 12.49, r: 6, i: 0.85 }, // Rome
+      { lat: 40.41, lon: -3.70, r: 7, i: 0.9 }, // Madrid
+      { lat: 41.38, lon: 2.17, r: 6, i: 0.85 }, // Barcelona
+      { lat: 55.75, lon: 37.61, r: 8, i: 0.95 }, // Moscow
+      { lat: 59.93, lon: 30.33, r: 6, i: 0.85 }, // St. Petersburg
+      { lat: 41.00, lon: 28.97, r: 7, i: 0.9 }, // Istanbul
+      { lat: 59.32, lon: 18.06, r: 5, i: 0.8 }, // Stockholm
+
+      // Asia East
+      { lat: 35.67, lon: 139.65, r: 10, i: 1.0 }, // Tokyo
+      { lat: 34.69, lon: 135.50, r: 8, i: 0.95 }, // Osaka
+      { lat: 35.18, lon: 136.90, r: 6, i: 0.85 }, // Nagoya
+      { lat: 37.56, lon: 126.97, r: 8, i: 0.95 }, // Seoul
+      { lat: 39.90, lon: 116.40, r: 8, i: 0.95 }, // Beijing
+      { lat: 31.23, lon: 121.47, r: 9, i: 1.0 }, // Shanghai
+      { lat: 23.12, lon: 113.26, r: 9, i: 1.0 }, // Guangzhou
+      { lat: 22.54, lon: 114.05, r: 8, i: 0.95 }, // Shenzhen
+      { lat: 22.31, lon: 114.16, r: 7, i: 0.95 }, // Hong Kong
+      { lat: 25.03, lon: 121.56, r: 6, i: 0.9 }, // Taipei
+
+      // Asia South
+      { lat: 28.61, lon: 77.20, r: 9, i: 1.0 }, // New Delhi
+      { lat: 19.07, lon: 72.87, r: 8, i: 0.95 }, // Mumbai
+      { lat: 12.97, lon: 77.59, r: 7, i: 0.9 }, // Bengaluru
+      { lat: 17.38, lon: 78.48, r: 6, i: 0.85 }, // Hyderabad
+      { lat: 13.08, lon: 80.27, r: 6, i: 0.85 }, // Chennai
+      { lat: 22.57, lon: 88.36, r: 7, i: 0.9 }, // Kolkata
+      { lat: 24.86, lon: 67.00, r: 7, i: 0.85 }, // Karachi
+      { lat: 23.81, lon: 90.41, r: 6, i: 0.85 }, // Dhaka
+
+      // Southeast Asia
+      { lat: 13.75, lon: 100.50, r: 7, i: 0.9 }, // Bangkok
+      { lat: 1.35, lon: 103.81, r: 7, i: 0.95 }, // Singapore
+      { lat: 3.13, lon: 101.68, r: 6, i: 0.85 }, // Kuala Lumpur
+      { lat: -6.20, lon: 106.84, r: 8, i: 0.95 }, // Jakarta
+      { lat: 14.59, lon: 120.98, r: 7, i: 0.9 }, // Manila
+      { lat: 10.82, lon: 106.62, r: 6, i: 0.85 }, // Ho Chi Minh City
+
+      // Middle East
+      { lat: 30.04, lon: 31.23, r: 8, i: 1.0 }, // Cairo
+      { lat: 25.20, lon: 55.27, r: 7, i: 0.95 }, // Dubai
+      { lat: 24.71, lon: 46.67, r: 6, i: 0.85 }, // Riyadh
+      { lat: 32.08, lon: 34.78, r: 6, i: 0.85 }, // Tel Aviv
+      { lat: 35.68, lon: 51.38, r: 6, i: 0.85 }, // Tehran
+      { lat: 25.28, lon: 51.53, r: 5, i: 0.85 }, // Doha
+
+      // South America
+      { lat: -23.55, lon: -46.63, r: 8, i: 0.95 }, // São Paulo
+      { lat: -22.90, lon: -43.17, r: 7, i: 0.9 }, // Rio de Janeiro
+      { lat: -34.60, lon: -58.38, r: 7, i: 0.9 }, // Buenos Aires
+      { lat: -33.44, lon: -70.66, r: 6, i: 0.85 }, // Santiago
+      { lat: -12.04, lon: -77.04, r: 5, i: 0.8 }, // Lima
+      { lat: 4.71, lon: -74.07, r: 5, i: 0.8 }, // Bogota
+
+      // Oceania
+      { lat: -33.86, lon: 151.20, r: 7, i: 0.9 }, // Sydney
+      { lat: -37.81, lon: 144.96, r: 6, i: 0.85 }, // Melbourne
+      { lat: -27.46, lon: 153.02, r: 5, i: 0.8 }, // Brisbane
+      { lat: -31.95, lon: 115.86, r: 5, i: 0.75 }, // Perth
+      { lat: -36.84, lon: 174.76, r: 4, i: 0.75 }, // Auckland
+
+      // Africa
+      { lat: -26.20, lon: 28.04, r: 7, i: 0.9 }, // Johannesburg
+      { lat: -33.92, lon: 18.42, r: 5, i: 0.8 }, // Cape Town
+      { lat: 6.52, lon: 3.37, r: 6, i: 0.85 }, // Lagos
+      { lat: -1.29, lon: 36.82, r: 5, i: 0.75 } // Nairobi
+    ];
+
+    // Render each city with realistic incandescent radial halo
+    cities.forEach(city => {
+      const pos = toXY(city.lat, city.lon);
+      const rad = city.r;
+      const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, rad * 2.2);
+      grad.addColorStop(0, 'rgba(255, 250, 220, 1.0)'); // Hot incandescent center
+      grad.addColorStop(0.25, `rgba(255, 200, 70, ${0.9 * city.i})`); // Warm golden light
+      grad.addColorStop(0.65, `rgba(255, 145, 30, ${0.45 * city.i})`); // Diffuse urban glow
+      grad.addColorStop(1, 'rgba(255, 120, 10, 0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, rad * 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Procedural satellite towns radiating outward
+      const satCount = Math.floor(12 + city.i * 18);
+      for (let s = 0; s < satCount; s++) {
+        const ang = (s / satCount) * Math.PI * 2 + ((city.lat * 17) % 3);
+        const dist = rad * 1.0 + ((s * 31) % (rad * 2.5));
+        const sx = pos.x + Math.cos(ang) * dist;
+        const sy = pos.y + Math.sin(ang) * dist;
+        const sSize = 0.8 + ((s * 7) % 1.5);
+        ctx.fillStyle = `rgba(255, 210, 100, ${0.35 + ((s * 13) % 0.45)})`;
+        ctx.beginPath();
+        ctx.arc(sx, sy, sSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    return texture;
+  }
+
+  /**
    * Generates Earth Cloud Layer Texture with alpha transparency
    */
   static generateEarthCloudsTexture() {

@@ -17,6 +17,14 @@
   <!-- Three.js r128 & OrbitControls CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Three.js Post-Processing & UnrealBloomPass CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 </head>
 <body>
 
@@ -56,6 +64,9 @@
       <div class="header-utility-group">
         <button id="tour-btn" class="hud-action-btn tour-btn" title="Automated Guided Tour">
           <span class="tour-icon">🎬</span> <span class="tour-text">Cinematic<br>Tour</span>
+        </button>
+        <button id="habitable-zone-btn" class="hud-action-btn hzone-btn" title="Toggle Circumstellar Habitable Life Zone (Goldilocks Belt)">
+          <span class="hzone-icon">🌱</span> <span class="hzone-text">Life<br>Zone</span>
         </button>
         <button id="audio-btn" class="hud-action-btn" title="Toggle Deep Space Ambient Soundscape">
           <span id="audio-icon">🔇</span>
@@ -286,6 +297,39 @@
 
       <div class="setting-item">
         <div class="setting-label-wrap">
+          <span class="setting-label">Cinematic Bloom</span>
+          <span class="setting-subtext">Radiant solar glow & HDR flare</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-bloom" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label-wrap">
+          <span class="setting-label">Earth Night Lights</span>
+          <span class="setting-subtext">Illuminated city grids on dark side</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-night-lights" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label-wrap">
+          <span class="setting-label">Habitable Life Zone</span>
+          <span class="setting-subtext">Circumstellar Goldilocks orbit belt</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-habitable-zone">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label-wrap">
           <span class="setting-label">Ecliptic Grid</span>
           <span class="setting-subtext">Astronomical coordinate rings</span>
         </div>
@@ -340,6 +384,14 @@
         <div class="shortcut-row">
           <span class="shortcut-desc">Toggle Cinematic Guided Tour</span>
           <span class="kbd-badge">T</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Toggle Habitable Life Zone</span>
+          <span class="kbd-badge">H</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Toggle Cinematic Bloom Glow</span>
+          <span class="kbd-badge">B</span>
         </div>
         <div class="shortcut-row">
           <span class="shortcut-desc">Close Panels / Unfocus</span>

@@ -655,6 +655,39 @@ button, input, select, .planet-pill, .speed-preset, .view-preset, .hud-action-bt
   text-align: left;
 }
 
+.hzone-btn {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.25));
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #a7f3d0;
+  padding: 4px 10px;
+}
+
+.hzone-btn:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.45), rgba(6, 182, 212, 0.45));
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.55);
+  color: #ffffff;
+}
+
+.hzone-btn.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.6), rgba(6, 182, 212, 0.6));
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.75);
+}
+
+.hzone-icon {
+  font-size: 13px;
+}
+
+.hzone-text {
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  text-align: left;
+}
+
 .hud-action-btn.active {
   background: rgba(0, 240, 255, 0.2);
   border-color: var(--accent-cyan);
@@ -1310,6 +1343,17 @@ input:checked + .slider::before {
 
   .header-utility-group .tour-text {
     display: none; /* Icon remains clearly visible */
+  }
+
+  .header-utility-group .hzone-btn {
+    width: auto;
+    padding: 0 8px;
+    border-radius: 16px;
+    height: 32px;
+  }
+
+  .header-utility-group .hzone-text {
+    display: none;
   }
 
   /* Show Mobile HUD Collapse/Expand Button */
